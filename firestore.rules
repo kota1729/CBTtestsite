@@ -1,0 +1,15 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid} {
+      // 自分の情報、または教員(role=teacher)なら全員分を読める
+      allow read: if request.auth != null
+        && (request.auth.uid == uid || request.auth.token.role == 'teacher');
+      // 本人が書き換えられるのは「mustChange を false にする」ことだけ
+      allow update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mustChange'])
+        && request.resource.data.mustChange == false;
+      allow create, delete: if false;
+    }
+  }
+}

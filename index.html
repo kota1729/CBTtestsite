@@ -1,0 +1,1616 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>教科別 学習ミニテスト</title>
+    <style>
+        :root {
+            --navy: #17324d;
+            --blue: #1769aa;
+            --mint: #eaf7f4;
+            --paper: #f4f7fb;
+            --ink: #223044;
+            --muted: #66758a;
+            --line: #dbe3ed;
+            --good: #18794e;
+            --bad: #b42318
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            background: var(--paper);
+            font-family: "Yu Gothic UI", Meiryo, sans-serif;
+            color: var(--ink);
+            line-height: 1.6
+        }
+
+        .wrap {
+            max-width: 960px;
+            margin: auto;
+            padding: 28px 18px 60px
+        }
+
+        .hero {
+            background: linear-gradient(120deg, #17324d, #1769aa);
+            color: #fff;
+            border-radius: 18px;
+            padding: 26px 30px;
+            margin-bottom: 20px
+        }
+
+        .hero h1 {
+            margin: 0 0 6px;
+            font-size: clamp(24px, 4vw, 34px)
+        }
+
+        .hero p {
+            margin: 0;
+            opacity: .9
+        }
+
+        .card {
+            background: white;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 22px;
+            margin: 16px 0;
+            box-shadow: 0 3px 12px #17324d0b
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--muted);
+            margin-bottom: 5px
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid #b9c6d5;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            color: var(--ink)
+        }
+
+        button {
+            border: 0;
+            border-radius: 9px;
+            padding: 11px 17px;
+            background: var(--blue);
+            color: white;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer
+        }
+
+        button:hover {
+            filter: brightness(.94)
+        }
+
+        button:disabled {
+            background: #c4ccd5;
+            color: #fff;
+            cursor: not-allowed;
+            filter: none;
+        }
+
+        button.secondary {
+            background: #e9eff6;
+            color: var(--navy)
+        }
+
+        button.danger {
+            background: #b42318
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 16px
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 13px
+        }
+
+        .qhead {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            color: var(--muted);
+            font-size: 14px
+        }
+
+        .question {
+            font-size: 21px;
+            font-weight: 700;
+            margin: 18px 0
+        }
+
+        .choices {
+            display: grid;
+            gap: 10px
+        }
+
+        .choice {
+            display: block;
+            padding: 13px 15px;
+            border: 1px solid var(--line);
+            border-radius: 9px;
+            cursor: pointer
+        }
+
+        .choice:hover {
+            background: #f2f7fc
+        }
+
+        .choice input {
+            width: auto;
+            margin-right: 8px
+        }
+
+        .hidden {
+            display: none !important
+        }
+
+        .pill {
+            display: inline-block;
+            background: var(--mint);
+            color: var(--good);
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 700
+        }
+
+        .score {
+            font-size: 32px;
+            color: var(--blue);
+            font-weight: 800
+        }
+
+        .feedback {
+            padding: 14px;
+            border-radius: 9px;
+            margin: 10px 0;
+            background: #f5f8fc
+        }
+
+        .feedback.good {
+            border-left: 4px solid var(--good)
+        }
+
+        .feedback.bad {
+            border-left: 4px solid var(--bad)
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px
+        }
+
+        th,
+        td {
+            padding: 9px 8px;
+            border-bottom: 1px solid var(--line);
+            text-align: left
+        }
+
+        th {
+            color: var(--muted);
+            white-space: nowrap
+        }
+
+        .tablewrap {
+            overflow: auto
+        }
+
+        .section-title {
+            margin: 0 0 12px;
+            color: var(--navy)
+        }
+
+
+        .quiz-settings {
+            margin-top: 12px;
+        }
+
+        .user-id {
+            min-height: 42px;
+            padding: 9px 12px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: var(--paper);
+            font-family: monospace;
+        }
+
+        .author-textarea {
+            width: 100%;
+            min-height: 72px;
+            padding: 10px 12px;
+            border: 1px solid #b9c6d5;
+            border-radius: 8px;
+            font: inherit;
+            resize: vertical;
+        }
+
+        .teacher-question-list li {
+            margin: 8px 0;
+        }
+
+
+        .question-set-list {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 12px;
+            margin: 14px 0;
+        }
+
+        .question-set-card {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+            min-height: 112px;
+            padding: 16px;
+            text-align: left;
+            background: #f4f8fc;
+            color: var(--navy);
+            border: 1px solid var(--line);
+        }
+
+        .question-set-card:hover {
+            background: #e8f2fb;
+        }
+
+        .question-set-title {
+            font-size: 17px;
+            font-weight: 800;
+        }
+
+        .question-set-meta,
+        .question-set-action {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .question-set-action {
+            margin-top: auto;
+            color: var(--blue);
+            font-weight: 700;
+        }
+
+        .empty-question-sets {
+            grid-column: 1 / -1;
+            padding: 16px;
+            background: var(--paper);
+            border-radius: 9px;
+            color: var(--muted);
+        }
+
+        .quit-dialog {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            background: #102338aa;
+        }
+
+        .quit-dialog-card {
+            width: min(100%, 440px);
+            padding: 24px;
+            border-radius: 16px;
+            background: white;
+            box-shadow: 0 18px 60px #10233855;
+        }
+
+        .quit-dialog-card h2 {
+            margin: 0 0 8px;
+            color: var(--navy);
+        }
+
+        .quit-dialog-card p {
+            color: var(--muted);
+        }
+
+        .quit-dialog-card .actions {
+            justify-content: flex-end;
+        }
+
+        .password-login-field {
+            grid-column: 1 / -1;
+        }
+
+        .password-control {
+            display: flex;
+            gap: 8px;
+        }
+
+        .password-control input {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .password-control button {
+            flex: 0 0 auto;
+        }
+
+        .pool-answer-input {
+            width: 120px;
+        }
+
+
+        .target-department-fieldset {
+            margin: 16px 0;
+            padding: 14px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+        }
+
+        .target-department-fieldset legend {
+            padding: 0 6px;
+            color: var(--navy);
+            font-weight: 700;
+        }
+
+        .target-grade-group {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+        }
+
+        .target-grade-group legend {
+            color: var(--ink);
+            font-weight: 700;
+        }
+
+        .target-department-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 18px;
+        }
+
+        .target-department-option {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin: 0;
+            color: var(--ink);
+        }
+
+        .target-department-option input {
+            width: auto;
+            margin: 0;
+        }
+
+        .source-question-list {
+            max-height: 360px;
+            overflow: auto;
+            border: 1px solid var(--line);
+            border-radius: 9px;
+            padding: 8px 12px;
+            margin-top: 8px;
+        }
+
+        .source-question {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 9px 2px;
+            border-bottom: 1px solid var(--line);
+            cursor: pointer;
+            color: var(--ink);
+        }
+
+        .source-question:last-child {
+            border-bottom: 0;
+        }
+
+        .source-question input {
+            width: auto;
+            margin: 4px 0 0;
+        }
+
+        .source-question span {
+            font-weight: 400;
+        }
+
+
+        .batch-item {
+            padding: 16px 0;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .batch-item-heading {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+
+        .batch-item-with-answer {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 12px;
+            align-items: start;
+        }
+
+        .number-picker {
+            width: 100%;
+        }
+
+        .number-picker-toggle {
+            min-width: 160px;
+            background: #e9eff6;
+            color: var(--navy);
+        }
+
+        .number-picker-options {
+            display: grid;
+            grid-template-columns: repeat(8, minmax(42px, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+            padding: 12px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #f4f7fb;
+        }
+
+        .number-picker-option {
+            padding: 8px 4px;
+            border: 1px solid #b9c6d5;
+            background: white;
+            color: var(--navy);
+        }
+
+        .number-picker-option:hover,
+        .number-picker-option.is-selected {
+            background: #d9ecfb;
+            color: var(--navy);
+            outline: 2px solid var(--blue);
+        }
+
+        @media (max-width: 800px) {
+            .number-picker-options {
+                grid-template-columns: repeat(6, minmax(40px, 1fr));
+            }
+        }
+
+        @media (max-width: 550px) {
+            .number-picker-options {
+                grid-template-columns: repeat(4, minmax(38px, 1fr));
+            }
+        }
+
+        @media (max-width: 360px) {
+            .number-picker-options {
+                grid-template-columns: repeat(3, minmax(38px, 1fr));
+            }
+        }
+
+        .pool-answer-input {
+            width: 120px;
+            padding: 8px;
+            border: 1px solid #b9c6d5;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .choice-pool-section {
+            margin-top: 24px;
+            padding: 16px;
+            border-radius: 10px;
+            background: var(--paper);
+        }
+
+        .choice-pool-section h3 {
+            margin-top: 0;
+        }
+
+        .choice-pool {
+            display: grid !important;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px 12px;
+            padding: 0;
+            list-style-position: inside;
+        }
+
+        .choice-pool li {
+            min-width: 0;
+            padding: 9px 12px;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #fff;
+        }
+
+        @media (max-width: 800px) {
+            .choice-pool {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 600px) {
+            .choice-pool {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        .answer-input {
+            width: 100%;
+            max-width: 420px;
+            padding: 11px 12px;
+            border: 1px solid #b9c6d5;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        @media(max-width:550px) {
+            .hero {
+                padding: 21px
+            }
+
+            .card {
+                padding: 16px
+            }
+
+            .question {
+                font-size: 18px
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="wrap">
+        <header class="hero">
+            <h1>教科別 学習ミニテスト</h1>
+            <p>教科や単元ごとの問題に取り組み、理解度を確認しましょう。</p>
+        </header>
+        <section class="card" id="loginPanel">
+            <h2 class="section-title">ログイン</h2>
+            <div class="grid">
+                <div><label for="userIdInput">ユーザーID</label><input id="userIdInput" type="text" autocomplete="username"
+                        required placeholder="ユーザーID"></div>
+                <div class="password-login-field"><label for="passwordInput">パスワード</label>
+                    <div class="password-control"><input id="passwordInput" type="password"
+                            autocomplete="current-password" placeholder="パスワード"><button class="secondary"
+                            id="togglePassword" type="button" aria-pressed="false">表示</button></div>
+                </div>
+            </div>
+            <div class="actions"><button id="loginButton">ログイン</button></div>
+            <p class="muted" id="loginMessage" role="status"></p>
+        </section>
+        <section class="card hidden" id="passwordChangePanel">
+            <h2 class="section-title">パスワードの変更</h2>
+            <p class="muted" id="pwChangeWho"></p>
+            <p>初回ログインです。新しいパスワードを設定してください。（8文字以上・初期パスワードとは別のもの）</p>
+            <div class="grid">
+                <div><label for="newPassword">新しいパスワード</label><input id="newPassword" type="password" autocomplete="new-password"></div>
+                <div><label for="newPasswordConfirm">新しいパスワード（確認）</label><input id="newPasswordConfirm" type="password" autocomplete="new-password"></div>
+            </div>
+            <div class="actions"><button id="savePassword" type="button">変更してはじめる</button><button class="secondary" id="cancelPassword" type="button">キャンセル</button></div>
+            <p class="muted" id="pwChangeMessage" role="status"></p>
+        </section>
+        <section class="card hidden" id="profile">
+            <h2 class="section-title">小テスト</h2>
+            <p id="signedInStudent" class="muted">ログイン中</p>
+            <h3>実施できる問題セット</h3>
+            <p class="muted">問題セットを押すと、テストが始まります。</p>
+            <div id="questionSetList" class="question-set-list" aria-label="実施できる問題セット"></div>
+            <div class="actions"><button class="secondary" id="showTeacher">結果一覧</button><button class="secondary"
+                    id="logoutButton">ログアウト</button></div>
+        </section>
+        <section class="card hidden" id="teacherDashboard">
+            <h2 class="section-title">先生用：問題作成</h2>
+            <p class="muted" id="signedInTeacher"></p>
+            <div class="question-set-list" id="teacherMenu" aria-label="先生メニュー">
+                <button class="question-set-card" type="button" data-teacher-view="create"><span
+                        class="question-set-title">問題を作る</span><span class="question-set-action">問題作成画面を開く
+                        →</span></button>
+                <button class="question-set-card" type="button" data-teacher-view="records"><span
+                        class="question-set-title">生徒の記録を見る</span><span class="question-set-action">受験記録一覧を開く
+                        →</span></button>
+                <button class="question-set-card" type="button" data-teacher-view="current"><span
+                        class="question-set-title">現在作っている問題</span><span class="question-set-action">問題セット一覧を開く
+                        →</span></button>
+                <div class="actions"><button class="secondary" type="button" id="teacherMenuLogout">ログアウト</button></div>
+            </div>
+            <section class="hidden" id="teacherCreatePanel">
+                <div class="actions"><button class="secondary" type="button" data-teacher-menu>先生メニューへ戻る</button></div>
+                <h3>問題を作る</h3>
+                <form id="questionForm">
+                    <div class="grid">
+                        <div><label for="newQuestionSet">名前（問題セット名）</label><input id="newQuestionSet" required
+                                placeholder="例：数学 I 第1章確認テスト"></div>
+                        <div><label for="newSubject">教科</label><select id="newSubject" required>
+                                <option value="">教科を選択</option>
+                                <option>情報処理</option>
+                                <option>国語</option>
+                                <option>数学</option>
+                                <option>英語</option>
+                                <option>社会</option>
+                                <option>理科</option>
+                                <option>簿記</option>
+                                <option>ビジネス基礎</option>
+                            </select></div>
+                        <div><label for="newUnit">単元</label><select id="newUnit" required disabled>
+                                <option value="">先に教科を選択</option>
+                            </select></div>
+                        <div><label for="newQuestionType">問題タイプ</label><select id="newQuestionType">
+                                <option value="choice">複数問題で選択肢をまとめる</option>
+                                <option value="fill">回答を直接入力する</option>
+                                <option value="individual">1問ずつ出題（各問4択）</option>
+                            </select></div>
+                        <div><label for="releaseMode">生徒への出題時刻</label><select id="releaseMode">
+                                <option value="now">今すぐ公開</option>
+                                <option value="delay">何分後に公開</option>
+                                <option value="datetime">日時を指定して公開</option>
+                            </select></div>
+                        <div id="delaySettings" class="hidden"><label for="delayMinutes">何分後</label><input
+                                id="delayMinutes" type="number" min="1" value="5"></div>
+                        <div id="datetimeSettings" class="hidden"><label for="releaseDateTime">公開日時</label><input
+                                id="releaseDateTime" type="datetime-local"></div>
+                    </div>
+                    <fieldset class="target-department-fieldset">
+                        <legend>対象学年・学科（複数選択できます）</legend>
+                        <p class="muted">選んだ学年・学科の生徒にだけ問題セットが表示されます。</p>
+                        <div id="targetDepartmentList" class="target-department-list"></div>
+                    </fieldset>
+                    <h3 style="margin-bottom:4px">教科・単元に一致する登録済み問題</h3>
+                    <p class="muted" id="sourceQuestionHint">教科を選ぶと単元のリストが表示されます。「すべて」を選ぶと、その教科の登録済み問題をすべて表示します。</p>
+                    <p class="muted" id="selectedQuestionCount">0問選択中</p>
+                    <div class="actions" style="align-items:end; margin:8px 0">
+                        <label for="randomQuestionCount">ランダムに選ぶ問題数</label>
+                        <input id="randomQuestionCount" type="number" min="1" value="5" style="max-width:100px">
+                        <button id="randomSelectQuestions" type="button" class="secondary">条件に合う問題からランダム選択</button>
+                    </div>
+                    <div id="sourceQuestionList" class="source-question-list" aria-label="選択できる既存問題"></div>
+                    <div class="actions"><button type="submit">選んだ問題でセットを保存</button><button class="secondary"
+                            type="button" id="teacherLogoutButton">ログアウト</button></div>
+                    <p class="muted" id="authorMessage" role="status"></p>
+                </form>
+            </section>
+            <section class="card hidden" id="teacherRecordsPanel">
+                <div class="actions"><button class="secondary" type="button" data-teacher-menu>先生メニューへ戻る</button></div>
+                <h3>生徒の記録を見る</h3>
+                <div class="actions"><button class="secondary" type="button" id="refreshTeacherRecords">記録を更新</button>
+                </div>
+                <div class="tablewrap" style="margin-top:14px">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>日時</th>
+                                <th>学年・クラス</th>
+                                <th>出席番号</th>
+                                <th>問題セット</th>
+                                <th>得点</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teacherRecords"></tbody>
+                    </table>
+                </div>
+            </section>
+            <section class="card hidden" id="teacherCurrentQuestionsPanel">
+                <div class="actions"><button class="secondary" type="button" data-teacher-menu>先生メニューへ戻る</button></div>
+                <h3>現在作っている問題 <span class="muted" id="teacherQuestionCount"></span></h3>
+                <ol id="teacherQuestionList" class="teacher-question-list"></ol>
+            </section>
+        </section>
+        <section class="card hidden" id="quiz">
+            <div id="singleMode">
+                <div class="qhead"><span id="progress">問題 1 / 10</span><span class="pill" id="category"></span></div>
+                <div class="question" id="prompt"></div>
+                <div class="choices" id="choices"></div>
+                <div class="actions"><button id="next">回答する</button><button class="secondary" id="quit">中断</button>
+                </div>
+                <p class="muted" id="quizMessage"></p>
+            </div>
+            <div id="batchMode" class="hidden">
+                <div class="qhead"><span id="batchProgress"></span><span class="pill" id="batchModeLabel"></span></div>
+                <p class="muted" id="batchInstruction"></p>
+                <div id="batchQuestions"></div>
+                <section id="choicePoolSection" class="choice-pool-section hidden">
+                    <h3>共通の選択肢</h3>
+                    <ol id="choicePool" class="choice-pool"></ol>
+                </section>
+                <div class="actions"><button id="submitBatch">まとめて採点</button><button class="secondary"
+                        id="quitBatch">中断</button></div>
+                <p class="muted" id="batchMessage"></p>
+            </div>
+        </section>
+        <section class="card hidden" id="result">
+            <h2 class="section-title">今回の結果</h2>
+            <div class="score" id="score"></div>
+            <div id="feedback"></div>
+            <div class="actions"><button id="again">もう一度挑戦</button><button class="secondary" id="back">マイページに戻る</button>
+            </div>
+        </section>
+        <section class="card hidden" id="teacher">
+            <h2 class="section-title">このブラウザの結果一覧</h2>
+            <p class="muted">この一覧は現在の端末・ブラウザに保存された結果だけです。別端末との共有や先生用ログインはありません。</p>
+            <div class="actions"><button class="secondary" id="csv">CSVを書き出す</button><button class="danger"
+                    id="clear">この端末の記録を削除</button><button class="secondary" id="hideTeacher">閉じる</button></div>
+            <div class="tablewrap" style="margin-top:14px">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>日時</th>
+                            <th>学年・クラス</th>
+                            <th>番号</th>
+                            <th>問題セット</th>
+                            <th>得点</th>
+                        </tr>
+                    </thead>
+                    <tbody id="records"></tbody>
+                </table>
+            </div>
+        </section>
+        <div id="quitDialog" class="quit-dialog hidden" role="presentation">
+            <section class="quit-dialog-card" role="dialog" aria-modal="true" aria-labelledby="quitDialogTitle"
+                aria-describedby="quitDialogMessage">
+                <h2 id="quitDialogTitle">テストを中断しますか？</h2>
+                <p id="quitDialogMessage">ここまでの回答は採点・保存されず、マイページに戻ります。</p>
+                <div class="actions">
+                    <button class="secondary" id="cancelQuit" type="button">テストを続ける</button>
+                    <button class="danger" id="confirmQuit" type="button">中断してマイページへ</button>
+                </div>
+            </section>
+        </div>
+        </div>
+    </main>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="./firebase-config.js"></script>
+    <script src="./subject/joho_shori.js"></script>
+    <script src="./subject/kokugo.js"></script>
+    <script src="./subject/sugaku.js"></script>
+    <script src="./subject/eigo.js"></script>
+    <script src="./subject/shakai.js"></script>
+    <script src="./subject/rika.js"></script>
+    <script src="./subject/boki.js"></script>
+    <script src="./subject/business_kiso.js"></script>
+    <script src="./school/schools.js"></script>
+    <script>window.questionBank = Object.entries(window.subjectQuestionBanks || {}).flatMap(([subject, bank]) => bank.map((question) => ({ ...question, subject })));</script>
+    <script>
+        const $ = (id) => document.getElementById(id);
+        let activeSchool = null;
+        let activeSchoolConfig = null;
+        let activeAccount = null;
+        let activeClass = null;
+        let questions = [];
+        let answers = [];
+        let sharedChoicePool = [];
+        let selectedChoiceNumbers = [];
+        let questionIndex = 0;
+        let questionMode = 'single';
+        let schoolScript = null;
+        let availableQuestionSets = [];
+        let selectedQuestionSet = null;
+
+        function shuffle(items) {
+            return [...items].sort(() => Math.random() - 0.5);
+        }
+
+        function historyKey() {
+            return `term_quiz_demo_records_v1::${activeSchool?.id || 'unknown'}`;
+        }
+
+        function customQuestionKey() {
+            return `term_quiz_custom_questions_v1::${activeSchool?.id || 'unknown'}`;
+        }
+
+        function getAllQuestions() {
+            return [...window.questionBank, ...getCustomQuestions()];
+        }
+
+        function getCustomQuestions() {
+            return JSON.parse(localStorage.getItem(customQuestionKey()) || '[]');
+        }
+
+        function hideViews() {
+            ['loginPanel', 'passwordChangePanel', 'profile', 'quiz', 'result', 'teacher', 'teacherDashboard'].forEach((id) => {
+                $(id).classList.add('hidden');
+            });
+        }
+
+        function showLogin() {
+            hideViews();
+            $('loginPanel').classList.remove('hidden');
+            $('passwordInput').value = '';
+            $('userIdInput').value = '';
+            pendingMatch = null;
+            $('newPassword').value = '';
+            $('newPasswordConfirm').value = '';
+            $('pwChangeMessage').textContent = '';
+            if (auth) auth.signOut().catch(() => {});
+            activeAccount = null;
+            activeClass = null;
+            selectedQuestionSet = null;
+        }
+
+        // ---- ログイン：Firebase Authentication（パスワードはFirebase側でハッシュ化して保管） ----
+        const ID_DOMAIN = 'quiz.example.com';   // tools/ 内のスクリプトと同じ値にすること
+        const toEmail = (userId) => `${userId.trim().toLowerCase()}@${ID_DOMAIN}`;
+        let auth = null;
+        let db = null;
+        let pendingMatch = null;
+
+        function initFirebase() {
+            const cfg = window.FIREBASE_CONFIG;
+            if (typeof firebase === 'undefined' || !cfg || String(cfg.apiKey).startsWith('YOUR_')) {
+                $('loginButton').disabled = true;
+                $('loginMessage').textContent = 'firebase-config.js に Firebase の設定を入力してください。';
+                return;
+            }
+            firebase.initializeApp(cfg);
+            auth = firebase.auth();
+            db = firebase.firestore();
+            auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {});
+        }
+
+        function loadSchoolConfig() {
+            const info = (window.SCHOOL_LIST || [])[0];
+            return new Promise((resolve, reject) => {
+                if (!info) return reject(new Error('school'));
+                window.SCHOOL_DATA = null;
+                const script = document.createElement('script');
+                script.src = `./school/${encodeURIComponent(info.file)}`;
+                script.onload = () => {
+                    script.remove();
+                    window.SCHOOL_DATA && window.SCHOOL_DATA.id === info.id ? resolve(window.SCHOOL_DATA) : reject(new Error('school'));
+                };
+                script.onerror = () => { script.remove(); reject(new Error('school')); };
+                document.head.appendChild(script);
+            });
+        }
+
+        function loginErrorMessage(error) {
+            const code = (error && error.code) || '';
+            if (code === 'auth/too-many-requests') return '失敗が続いたため一時的にロックされました。しばらくしてからやり直してください。';
+            if (code === 'auth/network-request-failed') return 'ネットワークに接続できません。';
+            if (code.startsWith('auth/')) return 'ユーザーIDまたはパスワードが違います。';
+            return 'ログインできませんでした。時間をおいてやり直すか、先生に連絡してください。';
+        }
+
+        $('togglePassword').addEventListener('click', () => {
+            const input = $('passwordInput');
+            const isVisible = input.type === 'text';
+            input.type = isVisible ? 'password' : 'text';
+            $('togglePassword').textContent = isVisible ? '表示' : '非表示';
+            $('togglePassword').setAttribute('aria-pressed', String(!isVisible));
+        });
+        ['userIdInput', 'passwordInput'].forEach((id) => {
+            $(id).addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') $('loginButton').click();
+            });
+        });
+
+        $('loginButton').onclick = async () => {
+            $('loginMessage').textContent = '';
+            const userId = $('userIdInput').value.trim();
+            const password = $('passwordInput').value;
+            if (!auth) return;
+            if (!userId || !password) {
+                $('loginMessage').textContent = 'ユーザーIDとパスワードを入力してください。';
+                return;
+            }
+            $('loginButton').disabled = true;
+            try {
+                const { user } = await auth.signInWithEmailAndPassword(toEmail(userId), password);
+                const snap = await db.collection('users').doc(user.uid).get();
+                if (!snap.exists) {
+                    await auth.signOut();
+                    $('loginMessage').textContent = 'アカウント情報が見つかりません。先生に連絡してください。';
+                    return;
+                }
+                const profile = snap.data();
+                const config = await loadSchoolConfig();
+                if (profile.mustChange) {
+                    pendingMatch = { user, profile, config, password };
+                    hideViews();
+                    $('passwordChangePanel').classList.remove('hidden');
+                    $('pwChangeWho').textContent = profile.userId;
+                    $('newPassword').focus();
+                    return;
+                }
+                completeLogin(profile, config);
+            } catch (error) {
+                $('loginMessage').textContent = loginErrorMessage(error);
+            } finally {
+                $('loginButton').disabled = false;
+            }
+        };
+
+        $('savePassword').onclick = async () => {
+            const m = pendingMatch;
+            if (!m) return;
+            const msg = $('pwChangeMessage');
+            const a = $('newPassword').value;
+            if (a.length < 8) { msg.textContent = 'パスワードは8文字以上にしてください。'; return; }
+            if (a === m.password) { msg.textContent = '初期パスワードとは別のパスワードにしてください。'; return; }
+            if (a !== $('newPasswordConfirm').value) { msg.textContent = '確認用のパスワードが一致しません。'; return; }
+            $('savePassword').disabled = true;
+            try {
+                await m.user.updatePassword(a);
+                await db.collection('users').doc(m.user.uid).update({ mustChange: false });
+            } catch {
+                msg.textContent = 'パスワードを変更できませんでした。もう一度ログインしてやり直してください。';
+                return;
+            } finally {
+                $('savePassword').disabled = false;
+            }
+            pendingMatch = null;
+            $('newPassword').value = '';
+            $('newPasswordConfirm').value = '';
+            msg.textContent = '';
+            completeLogin(m.profile, m.config);
+        };
+        $('cancelPassword').onclick = showLogin;
+
+        function completeLogin(profile, config) {
+            activeSchool = (window.SCHOOL_LIST || [])[0] || { id: 'main' };
+            activeSchoolConfig = config;
+            activeClass = null;
+            activeAccount = {
+                userId: profile.userId, role: profile.role, name: profile.name || '',
+                attendanceNumber: profile.attendanceNumber || '',
+                grade: profile.grade || '', className: profile.className || '',
+            };
+            $('passwordInput').value = '';
+            hideViews();
+            if (profile.role === 'teacher') {
+                $('teacherDashboard').classList.remove('hidden');
+                showTeacherMenu();
+                $('signedInTeacher').textContent = [activeAccount.grade, activeAccount.className,
+                    activeAccount.name ? `${activeAccount.name}先生` : '教員'].filter(Boolean).join(' ');
+                populateTargetDepartmentList();
+                populateSourceQuestionList();
+                renderTeacherQuestions();
+                renderTeacherRecords();
+            } else {
+                $('profile').classList.remove('hidden');
+                $('signedInStudent').textContent = `${activeAccount.grade} ${activeAccount.className} ${Number(activeAccount.attendanceNumber)}番さん`;
+                populateStudentQuestionSets();
+            }
+        }
+
+        function studentProfile() {
+            return {
+                grade: activeAccount.grade,
+                className: activeAccount.className,
+                number: activeAccount.attendanceNumber,
+                userId: activeAccount.userId,
+                questionSet: selectedQuestionSet?.title || '—',
+            };
+        }
+
+        function populateStudentQuestionSets() {
+            const customQuestions = getCustomQuestions();
+            const setMap = new Map();
+
+            customQuestions.forEach((question) => {
+                if (!question.setTitle || !question.type || (question.releaseAt && new Date(question.releaseAt) > new Date())) return;
+                if (Array.isArray(question.targets) && question.targets.length > 0) {
+                    const isForStudent = question.targets.some((target) => (
+                        target.grade === activeAccount?.grade && target.departments.includes(activeAccount?.className)
+                    ));
+                    if (!isForStudent) return;
+                }
+                const key = `${question.setTitle}::${question.type}`;
+                if (!setMap.has(key)) {
+                    setMap.set(key, {
+                        title: question.setTitle,
+                        type: question.type,
+                        subject: question.subject || '',
+                        unit: question.unit || '',
+                        questions: [],
+                    });
+                }
+                setMap.get(key).questions.push(question);
+            });
+            availableQuestionSets = [...setMap.values()];
+
+            const emptyMessage = customQuestions.length === 0
+                ? 'まだ問題セットが作成されていません'
+                : '公開中の問題セットはありません';
+            selectedQuestionSet = null;
+            $('questionSetList').innerHTML = availableQuestionSets.length
+                ? availableQuestionSets.map((set, index) => `
+                    <button class="question-set-card" type="button" data-set-index="${index}">
+                        <span class="question-set-title">${escapeHtml(set.title)}</span>
+                        <span class="question-set-meta">${escapeHtml([set.subject, set.unit].filter(Boolean).join(' ・ '))}</span>
+                        <span class="question-set-meta">${set.questions.length}問 ・ ${set.type === 'fill' ? '入力式' : set.type === 'individual' ? '1問ずつ（各問4択）' : '共通選択肢式'}</span>
+                        <span class="question-set-action">このセットを開始 →</span>
+                    </button>
+                `).join('')
+                : `<p class="empty-question-sets">${emptyMessage}</p>`;
+        }
+
+        function startQuestionSet(setIndex) {
+            selectedQuestionSet = availableQuestionSets[setIndex] || null;
+            const availableQuestions = selectedQuestionSet?.questions || [];
+
+            if (availableQuestions.length === 0) {
+                $('questionSetList').insertAdjacentHTML('afterbegin', '<p class="empty-question-sets">この問題セットには出題できる問題がありません。</p>');
+                return;
+            }
+
+            questionMode = selectedQuestionSet.type === 'fill' ? 'fill' : selectedQuestionSet.type === 'individual' ? 'single' : 'listChoice';
+            questions = [...availableQuestions];
+            answers = [];
+            questionIndex = 0;
+            $('profile').classList.add('hidden');
+            $('quiz').classList.remove('hidden');
+
+            if (questionMode === 'single') {
+                $('singleMode').classList.remove('hidden');
+                $('batchMode').classList.add('hidden');
+                drawSingleQuestion();
+            } else {
+                $('singleMode').classList.add('hidden');
+                $('batchMode').classList.remove('hidden');
+                drawQuestionList();
+            }
+        }
+
+        $('questionSetList').addEventListener('click', (event) => {
+            const button = event.target.closest('[data-set-index]');
+            if (button) startQuestionSet(Number(button.dataset.setIndex));
+        });
+
+        function drawSingleQuestion() {
+            const question = questions[questionIndex];
+            const options = shuffle(question.a.map((text, index) => ({
+                text,
+                isCorrect: index === question.k,
+            })));
+            $('progress').textContent = `問題 ${questionIndex + 1} / ${questions.length}`;
+            $('category').textContent = question.c;
+            $('prompt').textContent = question.q;
+            $('quizMessage').textContent = '';
+            $('choices').innerHTML = options.map((option, index) => `
+                <label class="choice">
+                    <input type="radio" name="singleAnswer" value="${option.isCorrect ? '1' : '0'}">
+                    ${String.fromCharCode(65 + index)}. ${escapeHtml(option.text)}
+                </label>
+            `).join('');
+            $('next').textContent = questionIndex === questions.length - 1 ? '採点する' : '回答する';
+        }
+
+        $('next').onclick = () => {
+            const selected = document.querySelector('input[name="singleAnswer"]:checked');
+            if (!selected) {
+                $('quizMessage').textContent = '選択肢を選んでください。';
+                return;
+            }
+            answers.push(selected.value === '1');
+            questionIndex += 1;
+            if (questionIndex < questions.length) drawSingleQuestion();
+            else finishQuiz();
+        };
+
+        function drawQuestionList() {
+            const isFillIn = questionMode === 'fill';
+            $('batchProgress').textContent = `${questions.length}問をまとめて出題`;
+            $('batchModeLabel').textContent = isFillIn ? '回答を入力' : '共通の選択肢から選ぶ';
+            $('batchMessage').textContent = '';
+            $('batchInstruction').textContent = isFillIn
+                ? '各問題の欄に回答を入力し、最後にまとめて採点します。'
+                : '問題文を上から読み、各問に選択肢の記号を記入してください。選択肢は下の共通一覧にあります。';
+            $('choicePoolSection').classList.toggle('hidden', isFillIn);
+
+            if (isFillIn) {
+                $('batchQuestions').innerHTML = questions.map((question, index) => `
+                    <article class="batch-item">
+                        <div class="batch-item-heading">
+                            <strong>${index + 1}. ${escapeHtml(question.q)}</strong>
+                            <span class="pill">${escapeHtml(question.c)}</span>
+                        </div>
+                        <input class="answer-input" type="text" data-answer-index="${index}" autocomplete="off" placeholder="回答を入力">
+                    </article>
+                `).join('');
+                return;
+            }
+
+            sharedChoicePool = shuffle([...new Set(questions.flatMap((question) => question.a))]);
+            selectedChoiceNumbers = questions.map(() => null);
+            $('batchQuestions').innerHTML = questions.map((question, index) => `
+                <article class="batch-item batch-item-with-answer">
+                    <strong>${index + 1}. ${escapeHtml(question.q)}</strong>
+                    <div class="number-picker" data-answer-index="${index}">
+                        <button class="secondary number-picker-toggle" type="button" aria-expanded="false" aria-controls="answerOptions${index}">番号を選択</button>
+                        <div class="number-picker-options hidden" id="answerOptions${index}" role="group" aria-label="${index + 1}問目の選択肢番号"></div>
+                    </div>
+                </article>
+            `).join('');
+            $('choicePool').innerHTML = sharedChoicePool.map((choice) => `
+                <li>${escapeHtml(choice)}</li>
+            `).join('');
+
+            renderAnswerNumberPickers();
+        }
+
+        function renderAnswerNumberPickers() {
+            document.querySelectorAll('.number-picker').forEach((picker) => {
+                const questionIndex = Number(picker.dataset.answerIndex);
+                const ownChoice = selectedChoiceNumbers[questionIndex];
+                const usedByOthers = new Set(selectedChoiceNumbers.filter((choice, index) => (
+                    index !== questionIndex && choice !== null
+                )));
+                const options = sharedChoicePool.map((_, index) => index)
+                    .filter((index) => !usedByOthers.has(index));
+                picker.querySelector('.number-picker-toggle').textContent = ownChoice === null
+                    ? '番号を選択'
+                    : `選択中：${ownChoice + 1}`;
+                picker.querySelector('.number-picker-options').innerHTML = options.map((index) => `
+                    <button class="number-picker-option ${ownChoice === index ? 'is-selected' : ''}" type="button" data-choice-index="${index}" aria-pressed="${ownChoice === index}">${index + 1}</button>
+                `).join('');
+            });
+        }
+
+        $('batchQuestions').addEventListener('click', (event) => {
+            const toggle = event.target.closest('.number-picker-toggle');
+            if (toggle) {
+                const currentOptions = toggle.nextElementSibling;
+                document.querySelectorAll('.number-picker-options').forEach((options) => {
+                    if (options !== currentOptions) {
+                        options.classList.add('hidden');
+                        options.previousElementSibling.setAttribute('aria-expanded', 'false');
+                    }
+                });
+                const willOpen = currentOptions.classList.contains('hidden');
+                currentOptions.classList.toggle('hidden', !willOpen);
+                toggle.setAttribute('aria-expanded', String(willOpen));
+                return;
+            }
+
+            const option = event.target.closest('.number-picker-option');
+            if (!option) return;
+            const picker = option.closest('.number-picker');
+            selectedChoiceNumbers[Number(picker.dataset.answerIndex)] = Number(option.dataset.choiceIndex);
+            renderAnswerNumberPickers();
+            document.querySelectorAll('.number-picker-options').forEach((options) => options.classList.add('hidden'));
+            document.querySelectorAll('.number-picker-toggle').forEach((button) => button.setAttribute('aria-expanded', 'false'));
+        });
+
+        $('submitBatch').onclick = () => {
+            if (questionMode === 'fill') {
+                const inputs = [...document.querySelectorAll('.answer-input')];
+                if (inputs.some((input) => !input.value.trim())) {
+                    $('batchMessage').textContent = 'すべての問題に回答を入力してください。';
+                    return;
+                }
+                answers = inputs.map((input, index) => (
+                    normalizeAnswer(input.value) === normalizeAnswer(questions[index].a[questions[index].k])
+                ));
+            } else {
+                if (selectedChoiceNumbers.some((index) => index === null || index < 0)) {
+                    $('batchMessage').textContent = 'すべての問題で、選択肢番号を選んでください。';
+                    return;
+                }
+                answers = selectedChoiceNumbers.map((selectedIndex, index) => (
+                    normalizeAnswer(sharedChoicePool[selectedIndex]) === normalizeAnswer(questions[index].a[questions[index].k])
+                ));
+            }
+            finishQuiz();
+        };
+
+        function normalizeAnswer(value) {
+            return value.trim().toLocaleLowerCase().replace(/[\s　]/g, '');
+        }
+
+        function finishQuiz() {
+            hideViews();
+            $('result').classList.remove('hidden');
+            const correctCount = answers.filter(Boolean).length;
+            $('score').textContent = `${correctCount} / ${questions.length} 問正解`;
+            $('feedback').innerHTML = questions.map((question, index) => `
+                <div class="feedback ${answers[index] ? 'good' : 'bad'}">
+                    <b>${index + 1}. ${answers[index] ? '正解' : '不正解'}：${escapeHtml(question.c)}</b>
+                    ${answers[index] ? '' : `<div>正解：${escapeHtml(question.a[question.k])}</div>`}
+                </div>
+            `).join('');
+
+            const records = JSON.parse(localStorage.getItem(historyKey()) || '[]');
+            records.unshift({
+                date: new Date().toLocaleString('ja-JP'),
+                ...studentProfile(),
+                mode: questionMode,
+                score: correctCount,
+                total: questions.length,
+            });
+            localStorage.setItem(historyKey(), JSON.stringify(records));
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, (character) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+            })[character]);
+        }
+
+        let selectedSourceQuestionIndexes = new Set();
+
+        function populateTargetDepartmentList() {
+            $('targetDepartmentList').innerHTML = activeSchoolConfig.grades.map((grade) => {
+                const departments = grade.departments || grade.classes || [];
+                return `
+                    <fieldset class="target-grade-group">
+                        <legend>${escapeHtml(grade.name)}</legend>
+                        <div class="target-department-options">
+                            ${departments.map((department) => `
+                                <label class="target-department-option">
+                                    <input class="target-department-checkbox" type="checkbox" data-grade="${escapeHtml(grade.name)}" data-department="${escapeHtml(department.name)}">
+                                    <span>${escapeHtml(department.name)}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </fieldset>
+                `;
+            }).join('');
+        }
+
+        function getSelectedTargets() {
+            const targetsByGrade = new Map();
+            document.querySelectorAll('.target-department-checkbox:checked').forEach((checkbox) => {
+                const grade = checkbox.dataset.grade;
+                if (!targetsByGrade.has(grade)) targetsByGrade.set(grade, []);
+                targetsByGrade.get(grade).push(checkbox.dataset.department);
+            });
+            return [...targetsByGrade.entries()].map(([grade, departments]) => ({ grade, departments }));
+        }
+
+        function formatTargets(targets = []) {
+            return targets.map((target) => `${target.grade} ${target.departments.join('・')}`).join('、') || '対象未設定';
+        }
+
+        function populateUnitList() {
+            const selectedSubject = $('newSubject').value;
+            const unitSelect = $('newUnit');
+            if (!selectedSubject) {
+                unitSelect.disabled = true;
+                unitSelect.innerHTML = '<option value="__all__">先に教科を選択してください</option>';
+                return;
+            }
+            const units = [...new Set(window.questionBank
+                .filter((question) => (question.subject || '情報処理') === selectedSubject)
+                .map((question) => question.unit || question.c)
+                .filter(Boolean))];
+            unitSelect.disabled = false;
+            unitSelect.innerHTML = '<option value="__all__">すべて</option>' + units.map((unit) =>
+                `<option value="${escapeHtml(unit)}">${escapeHtml(unit)}</option>`
+            ).join('');
+        }
+
+        function getMatchingSourceQuestions() {
+            const selectedSubject = $('newSubject').value;
+            const selectedUnit = $('newUnit').value;
+            return window.questionBank
+                .map((question, index) => ({ question, index }))
+                .filter(({ question }) => {
+                    const subject = question.subject || '情報処理';
+                    const unit = question.unit || question.c;
+                    return (!selectedSubject || subject === selectedSubject) && (selectedUnit === '__all__' || unit === selectedUnit);
+                });
+        }
+
+        function populateSourceQuestionList() {
+            const matches = getMatchingSourceQuestions();
+            $('sourceQuestionList').innerHTML = matches.map(({ question, index }, matchIndex) => `
+                <label class="source-question">
+                    <input type="checkbox" value="${index}" ${selectedSourceQuestionIndexes.has(index) ? 'checked' : ''}>
+                    <span><b>${matchIndex + 1}. ${escapeHtml(question.c)}</b><br>${escapeHtml(question.q)}</span>
+                </label>
+            `).join('') || '<p class="muted">選択した教科・単元に該当する登録済み問題がありません。</p>';
+            $('sourceQuestionList').querySelectorAll('input[type="checkbox"]').forEach((input) => {
+                input.addEventListener('change', () => {
+                    const index = Number(input.value);
+                    if (input.checked) selectedSourceQuestionIndexes.add(index);
+                    else selectedSourceQuestionIndexes.delete(index);
+                    $('selectedQuestionCount').textContent = `${selectedSourceQuestionIndexes.size}問選択中`;
+                });
+            });
+            $('selectedQuestionCount').textContent = `${selectedSourceQuestionIndexes.size}問選択中`;
+        }
+
+        $('randomSelectQuestions').addEventListener('click', () => {
+            const matches = getMatchingSourceQuestions();
+            const count = Number($('randomQuestionCount').value);
+            if (!Number.isInteger(count) || count < 1 || count > matches.length) {
+                $('authorMessage').textContent = `1から${matches.length}の範囲で問題数を指定してください。`;
+                return;
+            }
+            selectedSourceQuestionIndexes.clear();
+            shuffle(matches).slice(0, count).forEach(({ index }) => selectedSourceQuestionIndexes.add(index));
+            $('authorMessage').textContent = `${count}問をランダムに選択しました。`;
+            populateSourceQuestionList();
+        });
+
+        function updateReleaseFields() {
+            $('delaySettings').classList.toggle('hidden', $('releaseMode').value !== 'delay');
+            $('datetimeSettings').classList.toggle('hidden', $('releaseMode').value !== 'datetime');
+        }
+        function updateSourceQuestionsFromSubjectUnit() {
+            selectedSourceQuestionIndexes.clear();
+            populateUnitList();
+            populateSourceQuestionList();
+        }
+        $('newSubject').addEventListener('change', updateSourceQuestionsFromSubjectUnit);
+        populateUnitList();
+        populateSourceQuestionList();
+        $('newUnit').addEventListener('change', () => {
+            selectedSourceQuestionIndexes.clear();
+            populateSourceQuestionList();
+        });
+        $('releaseMode').addEventListener('change', updateReleaseFields);
+
+        function renderTeacherQuestions() {
+            const questionsForSchool = getCustomQuestions();
+            const setMap = new Map();
+            questionsForSchool.forEach((question) => {
+                const key = `${question.setTitle}::${question.type}`;
+                if (!setMap.has(key)) setMap.set(key, { ...question, count: 0 });
+                setMap.get(key).count += 1;
+            });
+            const sets = [...setMap.values()];
+            $('teacherQuestionCount').textContent = `${questionsForSchool.length}問 / ${sets.length}セット`;
+            $('teacherQuestionList').innerHTML = sets.length
+                ? sets.map((set) => {
+                    const releaseAt = set.releaseAt ? new Date(set.releaseAt) : null;
+                    const isScheduled = releaseAt && releaseAt > new Date();
+                    const status = isScheduled ? `公開予定：${releaseAt.toLocaleString('ja-JP')}` : '公開中';
+                    return `<li><div><b>${escapeHtml(set.setTitle)}</b> / ${escapeHtml(set.subject || '教科未設定')}・${escapeHtml(set.unit || '単元未設定')} / ${escapeHtml(formatTargets(set.targets))} / ${set.type === 'fill' ? '入力式' : set.type === 'individual' ? '1問ずつ（各問4択）' : '共通選択肢式'} / ${set.count}問 / ${status}</div><button class="danger" type="button" data-delete-set="${escapeHtml(set.setTitle)}">この問題を削除</button></li>`;
+                }).join('')
+                : '<li>まだ作成した問題はありません。</li>';
+        }
+
+        function renderTeacherRecords() {
+            const records = JSON.parse(localStorage.getItem(historyKey()) || '[]');
+            $('teacherRecords').innerHTML = records.length
+                ? records.map((record) => `
+                    <tr>
+                        <td>${escapeHtml(record.date)}</td>
+                        <td>${escapeHtml(record.grade)} ${escapeHtml(record.className)}</td>
+                        <td>${escapeHtml(record.number)}</td>
+                        <td>${escapeHtml(record.questionSet || '全範囲')}</td>
+                        <td>${record.score}/${record.total}</td>
+                    </tr>
+                `).join('')
+                : '<tr><td colspan="5">記録はありません</td></tr>';
+        }
+
+        function showTeacherMenu() {
+            $('teacherMenu').classList.remove('hidden');
+            ['teacherCreatePanel', 'teacherRecordsPanel', 'teacherCurrentQuestionsPanel'].forEach((id) => {
+                $(id).classList.add('hidden');
+            });
+        }
+
+        function showTeacherPanel(view) {
+            const panelByView = {
+                create: 'teacherCreatePanel',
+                records: 'teacherRecordsPanel',
+                current: 'teacherCurrentQuestionsPanel',
+            };
+            const panelId = panelByView[view];
+            if (!panelId) return;
+            $('teacherMenu').classList.add('hidden');
+            Object.values(panelByView).forEach((id) => $(id).classList.add('hidden'));
+            $(panelId).classList.remove('hidden');
+            if (view === 'records') renderTeacherRecords();
+            if (view === 'current') renderTeacherQuestions();
+        }
+
+        $('teacherMenu').addEventListener('click', (event) => {
+            const button = event.target.closest('[data-teacher-view]');
+            if (button) showTeacherPanel(button.dataset.teacherView);
+        });
+        $('teacherDashboard').addEventListener('click', (event) => {
+            if (event.target.closest('[data-teacher-menu]')) showTeacherMenu();
+        });
+        $('teacherMenuLogout').addEventListener('click', showLogin);
+        $('refreshTeacherRecords').addEventListener('click', renderTeacherRecords);
+        $('teacherQuestionList').addEventListener('click', (event) => {
+            const button = event.target.closest('[data-delete-set]');
+            if (!button) return;
+            const setTitle = button.dataset.deleteSet;
+            const customQuestions = getCustomQuestions().filter((question) => question.setTitle !== setTitle);
+            localStorage.setItem(customQuestionKey(), JSON.stringify(customQuestions));
+            renderTeacherQuestions();
+        });
+
+        $('questionForm').onsubmit = (event) => {
+            event.preventDefault();
+            const type = $('newQuestionType').value;
+            const setTitle = $('newQuestionSet').value.trim();
+            const subject = $('newSubject').value.trim();
+            const unit = $('newUnit').value === '__all__' ? 'すべて' : $('newUnit').value.trim();
+            const targets = getSelectedTargets();
+            const selectedIndexes = [...selectedSourceQuestionIndexes].sort((a, b) => a - b);
+            if (!setTitle || !subject || !unit || targets.length === 0 || selectedIndexes.length === 0) {
+                $('authorMessage').textContent = '問題セット名・対象学年／学科・教科・単元を入力し、問題を1問以上選択してください。';
+                return;
+            }
+            if (type === 'individual' && selectedIndexes.some((index) => window.questionBank[index].a.length !== 4)) {
+                $('authorMessage').textContent = '1問ずつ出題（各問4択）では、選択するすべての問題に4つの選択肢が必要です。';
+                return;
+            }
+            if (getCustomQuestions().some((question) => question.setTitle === setTitle)) {
+                $('authorMessage').textContent = '同じ名前の問題セットがすでにあります。別の名前にしてください。';
+                return;
+            }
+
+            let releaseAt;
+            if ($('releaseMode').value === 'delay') {
+                const minutes = Number($('delayMinutes').value);
+                if (!Number.isFinite(minutes) || minutes < 1) {
+                    $('authorMessage').textContent = '公開までの分数を1以上で入力してください。';
+                    return;
+                }
+                releaseAt = new Date(Date.now() + minutes * 60_000).toISOString();
+            } else if ($('releaseMode').value === 'datetime') {
+                const date = new Date($('releaseDateTime').value);
+                if (!$('releaseDateTime').value || Number.isNaN(date.getTime()) || date <= new Date()) {
+                    $('authorMessage').textContent = '未来の公開日時を指定してください。';
+                    return;
+                }
+                releaseAt = date.toISOString();
+            } else {
+                releaseAt = new Date().toISOString();
+            }
+
+            const customQuestions = getCustomQuestions();
+            selectedIndexes.forEach((index) => {
+                const source = window.questionBank[index];
+                customQuestions.push({
+                    c: source.c,
+                    setTitle,
+                    subject,
+                    unit,
+                    targets,
+                    type,
+                    q: source.q,
+                    a: type === 'fill' ? [source.a[source.k]] : [...source.a],
+                    k: type === 'fill' ? 0 : source.k,
+                    releaseAt,
+                    sourceIndex: index,
+                });
+            });
+            localStorage.setItem(customQuestionKey(), JSON.stringify(customQuestions));
+            const scheduleLabel = $('releaseMode').value === 'now' ? '公開しました' : `公開予約しました（${new Date(releaseAt).toLocaleString('ja-JP')}）`;
+            $('authorMessage').textContent = `「${setTitle}」を${scheduleLabel}。`;
+            $('newQuestionSet').value = '';
+            $('newSubject').value = '';
+            $('newUnit').value = '';
+            populateUnitList();
+            document.querySelectorAll('.target-department-checkbox:checked').forEach((checkbox) => {
+                checkbox.checked = false;
+            });
+            selectedSourceQuestionIndexes.clear();
+            populateSourceQuestionList();
+            renderTeacherQuestions();
+        };
+
+        $('logoutButton').onclick = showLogin;
+        $('teacherLogoutButton').onclick = showLogin;
+        $('again').onclick = () => {
+            hideViews();
+            $('profile').classList.remove('hidden');
+        };
+        $('back').onclick = returnToStudentProfile;
+        function openQuitDialog() {
+            $('quitDialog').classList.remove('hidden');
+            $('cancelQuit').focus();
+        }
+
+        function closeQuitDialog() {
+            $('quitDialog').classList.add('hidden');
+        }
+
+        function returnToStudentProfile() {
+            closeQuitDialog();
+            selectedQuestionSet = null;
+            hideViews();
+            $('profile').classList.remove('hidden');
+            populateStudentQuestionSets();
+        }
+
+        $('quit').onclick = openQuitDialog;
+        $('quitBatch').onclick = openQuitDialog;
+        $('cancelQuit').onclick = closeQuitDialog;
+        $('confirmQuit').onclick = returnToStudentProfile;
+        $('quitDialog').addEventListener('click', (event) => {
+            if (event.target === $('quitDialog')) closeQuitDialog();
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && !$('quitDialog').classList.contains('hidden')) closeQuitDialog();
+        });
+
+        function renderRecords() {
+            const records = JSON.parse(localStorage.getItem(historyKey()) || '[]');
+            const visibleRecords = activeAccount?.role === 'teacher'
+                ? records
+                : records.filter((record) => record.userId === activeAccount?.userId);
+            $('records').innerHTML = visibleRecords.length
+                ? visibleRecords.map((record) => `
+                    <tr>
+                        <td>${escapeHtml(record.date)}</td>
+                        <td>${escapeHtml(record.grade)} ${escapeHtml(record.className)}</td>
+                        <td>${escapeHtml(record.number)}</td><td>${escapeHtml(record.questionSet || '全範囲')}</td>
+                        <td>${record.score}/${record.total}</td>
+                    </tr>
+                `).join('')
+                : '<tr><td colspan="5">記録はありません</td></tr>';
+        }
+        $('showTeacher').onclick = () => {
+            hideViews();
+            $('teacher').classList.remove('hidden');
+            renderRecords();
+        };
+        $('hideTeacher').onclick = () => {
+            hideViews();
+            $('profile').classList.remove('hidden');
+        };
+        $('clear').onclick = () => {
+            if (confirm('このブラウザに保存された記録をすべて削除しますか？')) {
+                localStorage.removeItem(historyKey());
+                renderRecords();
+            }
+        };
+        $('csv').onclick = () => {
+            const records = JSON.parse(localStorage.getItem(historyKey()) || '[]');
+            const rows = [
+                ['日時', '学年', 'クラス', '出席番号', 'ユーザーID', '問題セット', '形式', '得点', '問題数'],
+                ...records.map((record) => [record.date, record.grade, record.className, record.number,
+                record.userId, record.questionSet, record.mode, record.score, record.total]),
+            ];
+            const csv = '\uFEFF' + rows.map((row) => row.map((value) => (
+                `"${String(value ?? '').replace(/"/g, '""')}"`
+            )).join(',')).join('\r\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${activeSchool.id}_results.csv`;
+            link.click();
+            URL.revokeObjectURL(url);
+        };
+
+        initFirebase();
+        populateSourceQuestionList();
+        updateReleaseFields();
+        window.setInterval(() => {
+            if (activeAccount?.role === 'student' && !$('profile').classList.contains('hidden')) {
+                populateStudentQuestionSets();
+            }
+        }, 30_000);
+    </script>
+</body>
+
+</html>
