@@ -644,6 +644,7 @@
             <section class="hidden" id="teacherCreatePanel">
                 <div class="actions"><button class="secondary" type="button" data-teacher-menu>先生メニューへ戻る</button></div>
                 <h3>問題を作る</h3>
+                <p class="muted">ここで作った問題セットは、<b>この端末の中だけ</b>に保存されます。生徒全員に配る問題は、管理画面（Apps Script）で作ってください。</p>
                 <form id="questionForm">
                     <div class="grid">
                         <div><label for="newQuestionSet">名前（問題セット名）</label><input id="newQuestionSet" required
@@ -830,8 +831,34 @@
             return [...window.questionBank, ...getCustomQuestions()];
         }
 
-        function getCustomQuestions() {
+        // この端末（先生メニュー）で作った問題
+        function getLocalQuestions() {
             return JSON.parse(localStorage.getItem(customQuestionKey()) || '[]');
+        }
+
+        // 管理画面（Apps Script）で作った問題＝Firestoreの questionSets
+        let remoteQuestions = [];
+        async function loadRemoteQuestions() {
+            if (!db) return [];
+            try {
+                const snap = await db.collection('questionSets').get();
+                const out = [];
+                snap.forEach((doc) => {
+                    const set = doc.data();
+                    (set.questions || []).forEach((item) => out.push({
+                        c: item.c || set.unit || set.subject || '', setTitle: set.setTitle, subject: set.subject || '',
+                        unit: set.unit || '', targets: set.targets || [], type: set.type, q: item.q, a: item.a,
+                        k: item.k || 0, releaseAt: set.releaseAt || '', remote: true,
+                    }));
+                });
+                return out;
+            } catch {
+                return [];
+            }
+        }
+
+        function getCustomQuestions() {
+            return [...remoteQuestions, ...getLocalQuestions()];
         }
 
         function hideViews() {
@@ -850,6 +877,7 @@
             $('newPasswordConfirm').value = '';
             $('pwChangeMessage').textContent = '';
             if (auth) auth.signOut().catch(() => {});
+            remoteQuestions = [];
             activeAccount = null;
             activeClass = null;
             selectedQuestionSet = null;
@@ -940,7 +968,7 @@
                     $('newPassword').focus();
                     return;
                 }
-                completeLogin(profile, config);
+                await completeLogin(profile, config);
             } catch (error) {
                 $('loginMessage').textContent = loginErrorMessage(error);
             } finally {
@@ -970,11 +998,11 @@
             $('newPassword').value = '';
             $('newPasswordConfirm').value = '';
             msg.textContent = '';
-            completeLogin(m.profile, m.config);
+            await completeLogin(m.profile, m.config);
         };
         $('cancelPassword').onclick = showLogin;
 
-        function completeLogin(profile, config) {
+        async function completeLogin(profile, config) {
             activeSchool = (window.SCHOOL_LIST || [])[0] || { id: 'main' };
             activeSchoolConfig = config;
             activeClass = null;
@@ -983,6 +1011,7 @@
                 attendanceNumber: profile.attendanceNumber || '',
                 grade: profile.grade || '', className: profile.className || '',
             };
+            remoteQuestions = await loadRemoteQuestions();
             $('passwordInput').value = '';
             hideViews();
             if (profile.role === 'teacher') {
@@ -1385,7 +1414,7 @@
                     const releaseAt = set.releaseAt ? new Date(set.releaseAt) : null;
                     const isScheduled = releaseAt && releaseAt > new Date();
                     const status = isScheduled ? `公開予定：${releaseAt.toLocaleString('ja-JP')}` : '公開中';
-                    return `<li><div><b>${escapeHtml(set.setTitle)}</b> / ${escapeHtml(set.subject || '教科未設定')}・${escapeHtml(set.unit || '単元未設定')} / ${escapeHtml(formatTargets(set.targets))} / ${set.type === 'fill' ? '入力式' : set.type === 'individual' ? '1問ずつ（各問4択）' : '共通選択肢式'} / ${set.count}問 / ${status}</div><button class="danger" type="button" data-delete-set="${escapeHtml(set.setTitle)}">この問題を削除</button></li>`;
+                    return `<li><div><b>${escapeHtml(set.setTitle)}</b> / ${escapeHtml(set.subject || '教科未設定')}・${escapeHtml(set.unit || '単元未設定')} / ${escapeHtml(formatTargets(set.targets))} / ${set.type === 'fill' ? '入力式' : set.type === 'individual' ? '1問ずつ（各問4択）' : '共通選択肢式'} / ${set.count}問 / ${status}</div>${set.remote ? '<span class="muted">管理画面で作成したセット（削除は管理画面から）</span>' : `<button class="danger" type="button" data-delete-set="${escapeHtml(set.setTitle)}">この問題を削除</button>`}</li>`;
                 }).join('')
                 : '<li>まだ作成した問題はありません。</li>';
         }
@@ -1440,7 +1469,7 @@
             const button = event.target.closest('[data-delete-set]');
             if (!button) return;
             const setTitle = button.dataset.deleteSet;
-            const customQuestions = getCustomQuestions().filter((question) => question.setTitle !== setTitle);
+            const customQuestions = getLocalQuestions().filter((question) => question.setTitle !== setTitle);
             localStorage.setItem(customQuestionKey(), JSON.stringify(customQuestions));
             renderTeacherQuestions();
         });
@@ -1485,7 +1514,7 @@
                 releaseAt = new Date().toISOString();
             }
 
-            const customQuestions = getCustomQuestions();
+            const customQuestions = getLocalQuestions();
             selectedIndexes.forEach((index) => {
                 const source = window.questionBank[index];
                 customQuestions.push({

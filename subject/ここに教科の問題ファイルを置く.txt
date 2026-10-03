@@ -1,2 +1,0 @@
-joho_shori.js / kokugo.js / sugaku.js / eigo.js / shakai.js / rika.js / boki.js / business_kiso.js の8ファイルを、このフォルダに入れてください。
-（この.txtファイルは、入れ終わったら削除してかまいません）

@@ -11,5 +11,10 @@ service cloud.firestore {
         && request.resource.data.mustChange == false;
       allow create, delete: if false;
     }
+    // 管理画面（Apps Script）で作った問題セット：ログイン済みなら読める。書き込みはサーバー（管理画面）だけ
+    match /questionSets/{setId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
   }
 }
