@@ -583,6 +583,23 @@
                 font-size: 18px
             }
         }
+
+        /* ログイン系画面：参考サイトに合わせ、中央に1枚のカードで表示 */
+        body.auth-mode .hero { display: none }
+        body.auth-mode .wrap { max-width: 750px; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 15px }
+        body.auth-mode .card { margin: 0; padding: 25px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0, 0, 0, .1) }
+        .auth-title { font-size: 22px; text-align: center; margin: 0 0 12px; color: var(--navy) }
+        .auth-sub { text-align: center; color: #7f8c8d; font-size: 13px; margin: 0 0 25px }
+        .auth-form { display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px }
+        .auth-form input { padding: 12px; border-radius: 6px; font-size: 15px }
+        .password-wrapper { position: relative }
+        .password-wrapper input { padding-right: 62px }
+        .toggle-pw-btn { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: #eee; color: #555; border: 0; border-radius: 4px; padding: 6px 10px; font-size: 12px; font-weight: 400 }
+        .toggle-pw-btn:hover { background: #ddd; filter: none }
+        .auth-btns { display: flex; gap: 10px; margin-bottom: 15px }
+        .auth-btns button { flex: 1; padding: 14px 10px; font-size: 14px; border-radius: 6px }
+        .auth-msg { text-align: center; margin: 0 }
+        @media(max-width:480px) { body.auth-mode .card { padding: 15px } .auth-title { font-size: 18px } .toggle-pw-btn { font-size: 11px; padding: 5px 8px } }
     </style>
 </head>
 
@@ -593,29 +610,34 @@
             <p>教科や単元ごとの問題に取り組み、理解度を確認しましょう。</p>
         </header>
         <section class="card" id="loginPanel">
-            <h2 class="section-title">ログイン</h2>
-            <div class="grid">
-                <div><label for="userIdInput">ユーザーID</label><input id="userIdInput" type="text" autocomplete="username"
-                        required placeholder="ユーザーID"></div>
-                <div class="password-login-field"><label for="passwordInput">パスワード</label>
-                    <div class="password-control"><input id="passwordInput" type="password"
-                            autocomplete="current-password" placeholder="パスワード"><button class="secondary"
-                            id="togglePassword" type="button" aria-pressed="false">表示</button></div>
+            <h1 class="auth-title">ログイン</h1>
+            <p class="auth-sub">ユーザーIDとパスワードを入力してください。</p>
+            <div class="auth-form">
+                <input id="userIdInput" type="text" autocomplete="username" required placeholder="ユーザーID">
+                <div class="password-wrapper">
+                    <input id="passwordInput" type="password" autocomplete="current-password" placeholder="パスワード">
+                    <button class="toggle-pw-btn" id="togglePassword" type="button" data-target="passwordInput" aria-pressed="false">表示</button>
                 </div>
             </div>
-            <div class="actions"><button id="loginButton">ログイン</button></div>
-            <p class="muted" id="loginMessage" role="status"></p>
+            <div class="auth-btns"><button id="loginButton">ログイン</button></div>
+            <p class="muted auth-msg" id="loginMessage" role="status"></p>
         </section>
         <section class="card hidden" id="passwordChangePanel">
-            <h2 class="section-title">パスワードの変更</h2>
-            <p class="muted" id="pwChangeWho"></p>
-            <p>初回ログインです。新しいパスワードを設定してください。（8文字以上・初期パスワードとは別のもの）</p>
-            <div class="grid">
-                <div><label for="newPassword">新しいパスワード</label><input id="newPassword" type="password" autocomplete="new-password"></div>
-                <div><label for="newPasswordConfirm">新しいパスワード（確認）</label><input id="newPasswordConfirm" type="password" autocomplete="new-password"></div>
+            <h1 class="auth-title">パスワードの設定</h1>
+            <p class="auth-sub" id="pwChangeWho"></p>
+            <p class="auth-sub" style="margin-top:-12px">初回ログインです。新しいパスワードを設定してください。（8文字以上・初期パスワードとは別のもの）</p>
+            <div class="auth-form">
+                <div class="password-wrapper">
+                    <input id="newPassword" type="password" autocomplete="new-password" placeholder="新しいパスワード">
+                    <button class="toggle-pw-btn" type="button" data-target="newPassword" aria-pressed="false">表示</button>
+                </div>
+                <div class="password-wrapper">
+                    <input id="newPasswordConfirm" type="password" autocomplete="new-password" placeholder="新しいパスワード（確認）">
+                    <button class="toggle-pw-btn" type="button" data-target="newPasswordConfirm" aria-pressed="false">表示</button>
+                </div>
             </div>
-            <div class="actions"><button id="savePassword" type="button">変更してはじめる</button><button class="secondary" id="cancelPassword" type="button">キャンセル</button></div>
-            <p class="muted" id="pwChangeMessage" role="status"></p>
+            <div class="auth-btns"><button id="savePassword" type="button">変更してはじめる</button><button class="secondary" id="cancelPassword" type="button">キャンセル</button></div>
+            <p class="muted auth-msg" id="pwChangeMessage" role="status"></p>
         </section>
         <section class="card hidden" id="profile">
             <h2 class="section-title">小テスト</h2>
@@ -862,6 +884,7 @@
         }
 
         function hideViews() {
+            document.body.classList.remove('auth-mode');
             ['loginPanel', 'passwordChangePanel', 'profile', 'quiz', 'result', 'teacher', 'teacherDashboard'].forEach((id) => {
                 $(id).classList.add('hidden');
             });
@@ -869,6 +892,7 @@
 
         function showLogin() {
             hideViews();
+            document.body.classList.add('auth-mode');
             $('loginPanel').classList.remove('hidden');
             $('passwordInput').value = '';
             $('userIdInput').value = '';
@@ -927,12 +951,14 @@
             return 'ログインできませんでした。時間をおいてやり直すか、先生に連絡してください。';
         }
 
-        $('togglePassword').addEventListener('click', () => {
-            const input = $('passwordInput');
-            const isVisible = input.type === 'text';
-            input.type = isVisible ? 'password' : 'text';
-            $('togglePassword').textContent = isVisible ? '表示' : '非表示';
-            $('togglePassword').setAttribute('aria-pressed', String(!isVisible));
+        document.querySelectorAll('.toggle-pw-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const input = $(btn.dataset.target);
+                const isVisible = input.type === 'text';
+                input.type = isVisible ? 'password' : 'text';
+                btn.textContent = isVisible ? '表示' : '非表示';
+                btn.setAttribute('aria-pressed', String(!isVisible));
+            });
         });
         ['userIdInput', 'passwordInput'].forEach((id) => {
             $(id).addEventListener('keydown', (event) => {
@@ -963,8 +989,11 @@
                 if (profile.mustChange) {
                     pendingMatch = { user, profile, config, password };
                     hideViews();
+                    document.body.classList.add('auth-mode');
                     $('passwordChangePanel').classList.remove('hidden');
-                    $('pwChangeWho').textContent = profile.userId;
+                    $('pwChangeWho').textContent = 'ユーザーID：' + profile.userId;
+                    ['newPassword', 'newPasswordConfirm'].forEach((id) => { $(id).type = 'password'; });
+                    document.querySelectorAll('#passwordChangePanel .toggle-pw-btn').forEach((b) => { b.textContent = '表示'; b.setAttribute('aria-pressed', 'false'); });
                     $('newPassword').focus();
                     return;
                 }
