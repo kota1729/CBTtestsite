@@ -15,6 +15,11 @@ service cloud.firestore {
       allow create, delete: if false;
     }
 
+    // 初期パスワードの記録：誰も読み書きできない（管理画面のサーバー側だけが扱う）
+    match /initialPasswords/{id} {
+      allow read, write: if false;
+    }
+
     // テンプレート（管理画面で作る問題のもと）：先生だけが読める。書き込みは管理画面(Apps Script)だけ
     match /templates/{id} {
       allow read: if isTeacher();

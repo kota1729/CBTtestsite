@@ -610,8 +610,7 @@
             <p>教科や単元ごとの問題に取り組み、理解度を確認しましょう。</p>
         </header>
         <section class="card" id="loginPanel">
-            <h1 class="auth-title">ログイン</h1>
-            <p class="auth-sub">ユーザーIDとパスワードを入力してください。</p>
+            <h1 class="auth-title" style="margin-bottom:22px">ログイン</h1>
             <div class="auth-form">
                 <input id="userIdInput" type="text" autocomplete="username" required placeholder="ユーザーID">
                 <div class="password-wrapper">
@@ -625,7 +624,6 @@
         <section class="card hidden" id="passwordChangePanel">
             <h1 class="auth-title">パスワードの設定</h1>
             <p class="auth-sub" id="pwChangeWho"></p>
-            <p class="auth-sub" style="margin-top:-12px">初回ログインです。新しいパスワードを設定してください。（8文字以上・初期パスワードとは別のもの）</p>
             <div class="auth-form">
                 <div class="password-wrapper">
                     <input id="newPassword" type="password" autocomplete="new-password" placeholder="新しいパスワード">
@@ -654,7 +652,6 @@
             <h2 class="section-title">小テスト</h2>
             <p id="signedInStudent" class="muted">ログイン中</p>
             <h3>実施できる問題セット</h3>
-            <p class="muted">問題セットを押すと、テストが始まります。</p>
             <div id="questionSetList" class="question-set-list" aria-label="実施できる問題セット"></div>
             <div class="actions"><button class="secondary" id="showTeacher">結果一覧</button><button class="secondary hidden admin-only"
                     type="button" data-to-chooser>画面の選択へ戻る</button><button class="secondary"
@@ -678,7 +675,6 @@
             <section class="hidden" id="teacherCreatePanel">
                 <div class="actions"><button class="secondary" type="button" data-teacher-menu>先生メニューへ戻る</button></div>
                 <h3>問題を作る</h3>
-                <p class="muted">管理画面で作った「テンプレート」を選ぶと、問題がまとめて選ばれます。学年・学科と公開時刻を決めて保存すると、対象の生徒に表示されます。</p>
                 <form id="questionForm">
                     <div class="grid">
                         <div><label for="newQuestionSet">名前（問題セット名）</label><input id="newQuestionSet" required
@@ -709,11 +705,9 @@
                     </div>
                     <fieldset class="target-department-fieldset">
                         <legend>対象学年・学科（複数選択できます）</legend>
-                        <p class="muted">選んだ学年・学科の生徒にだけ問題セットが表示されます。</p>
                         <div id="targetDepartmentList" class="target-department-list"></div>
                     </fieldset>
                     <h3 style="margin-bottom:4px">教科・単元に一致する登録済み問題</h3>
-                    <p class="muted" id="sourceQuestionHint">教科を選ぶと単元のリストが表示されます。「すべて」を選ぶと、その教科の登録済み問題をすべて表示します。</p>
                     <p class="muted" id="selectedQuestionCount">0問選択中</p>
                     <div class="actions" style="align-items:end; margin:8px 0">
                         <label for="randomQuestionCount">ランダムに選ぶ問題数</label>
@@ -789,7 +783,6 @@
         </section>
         <section class="card hidden" id="teacher">
             <h2 class="section-title">このブラウザの結果一覧</h2>
-            <p class="muted">この一覧は現在の端末・ブラウザに保存された結果だけです。別端末との共有や先生用ログインはありません。</p>
             <div class="actions"><button class="secondary" id="csv">CSVを書き出す</button><button class="danger"
                     id="clear">この端末の記録を削除</button><button class="secondary" id="hideTeacher">閉じる</button></div>
             <div class="tablewrap" style="margin-top:14px">
@@ -1428,9 +1421,6 @@
         function populateTemplateOptions() {
             $('newTemplate').innerHTML = '<option value="">（選ばない：下の教科・単元から選ぶ）</option>' + templateList.map((t) =>
                 `<option value="${escapeHtml(t.id)}">${escapeHtml(t.title)}（${t.count}問）</option>`).join('');
-            $('sourceQuestionHint').textContent = templateList.length
-                ? '教科を選ぶと単元のリストが表示されます。「すべて」を選ぶと、その教科のテンプレートの問題をすべて表示します。'
-                : 'テンプレートがまだありません。管理画面で、問題セットを作るか、教科ファイルを取り込んでください。';
         }
 
         function populateSubjectOptions() {
