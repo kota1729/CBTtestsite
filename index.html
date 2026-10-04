@@ -612,9 +612,9 @@
         <section class="card" id="loginPanel">
             <h1 class="auth-title" style="margin-bottom:22px">ログイン</h1>
             <div class="auth-form">
-                <input id="userIdInput" type="text" autocomplete="username" required placeholder="ユーザーID">
+                <input id="userIdInput" type="text" autocomplete="off" required placeholder="ユーザーID">
                 <div class="password-wrapper">
-                    <input id="passwordInput" type="password" autocomplete="current-password" placeholder="パスワード">
+                    <input id="passwordInput" type="password" autocomplete="off" placeholder="パスワード">
                     <button class="toggle-pw-btn" id="togglePassword" type="button" data-target="passwordInput" aria-pressed="false">表示</button>
                 </div>
             </div>
@@ -626,11 +626,11 @@
             <p class="auth-sub" id="pwChangeWho"></p>
             <div class="auth-form">
                 <div class="password-wrapper">
-                    <input id="newPassword" type="password" autocomplete="new-password" placeholder="新しいパスワード">
+                    <input id="newPassword" type="password" autocomplete="off" placeholder="新しいパスワード">
                     <button class="toggle-pw-btn" type="button" data-target="newPassword" aria-pressed="false">表示</button>
                 </div>
                 <div class="password-wrapper">
-                    <input id="newPasswordConfirm" type="password" autocomplete="new-password" placeholder="新しいパスワード（確認）">
+                    <input id="newPasswordConfirm" type="password" autocomplete="off" placeholder="新しいパスワード（確認）">
                     <button class="toggle-pw-btn" type="button" data-target="newPasswordConfirm" aria-pressed="false">表示</button>
                 </div>
             </div>
