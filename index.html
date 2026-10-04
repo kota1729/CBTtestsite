@@ -643,10 +643,10 @@
             <div class="auth-form">
                 <button type="button" id="chooseTeacher">先生画面（問題の公開・生徒の記録）</button>
                 <button type="button" id="chooseStudent">生徒画面（問題を解く）</button>
-                <button type="button" id="chooseAdmin" class="secondary">管理画面（生徒の登録・パスワード・問題テンプレート）</button>
+                <button type="button" id="chooseAdmin">管理画面（生徒の登録・パスワード・問題テンプレート）</button>
             </div>
             <p class="muted auth-msg" id="chooserMessage" role="status"></p>
-            <div class="auth-btns"><button class="secondary" type="button" id="chooserLogout">ログアウト</button></div>
+            <div class="auth-btns"><button class="danger" type="button" id="chooserLogout">ログアウト</button></div>
         </section>
         <section class="card hidden" id="profile">
             <h2 class="section-title">小テスト</h2>
@@ -654,7 +654,7 @@
             <h3>実施できる問題セット</h3>
             <div id="questionSetList" class="question-set-list" aria-label="実施できる問題セット"></div>
             <div class="actions"><button class="secondary" id="showTeacher">結果一覧</button><button class="secondary hidden admin-only"
-                    type="button" data-to-chooser>画面の選択へ戻る</button><button class="secondary"
+                    type="button" data-to-chooser>画面の選択へ戻る</button><button class="danger"
                     id="logoutButton">ログアウト</button></div>
         </section>
         <section class="card hidden" id="teacherDashboard">
@@ -670,7 +670,7 @@
                 <button class="question-set-card" type="button" data-teacher-view="current"><span
                         class="question-set-title">現在作っている問題</span><span class="question-set-action">問題セット一覧を開く
                         →</span></button>
-                <div class="actions"><button class="secondary hidden admin-only" type="button" data-to-chooser>画面の選択へ戻る</button><button class="secondary" type="button" id="teacherMenuLogout">ログアウト</button></div>
+                <div class="actions"><button class="secondary hidden admin-only" type="button" data-to-chooser>画面の選択へ戻る</button><button class="danger" type="button" id="teacherMenuLogout">ログアウト</button></div>
             </div>
             <section class="hidden" id="teacherCreatePanel">
                 <div class="actions"><button class="secondary" type="button" data-teacher-menu>先生メニューへ戻る</button></div>
@@ -678,30 +678,30 @@
                 <form id="questionForm">
                     <div class="grid">
                         <div><label for="newQuestionSet">名前（問題セット名）</label><input id="newQuestionSet" required
-                                placeholder="例：数学 I 第1章確認テスト"></div>
-                        <div style="grid-column:1/-1"><label for="newTemplate">テンプレート（管理画面で作った問題）</label><select id="newTemplate">
+                                placeholder="例：数学 I 第1章確認テスト" autocomplete="off"></div>
+                        <div style="grid-column:1/-1"><label for="newTemplate">テンプレート（管理画面で作った問題）</label><select autocomplete="off" id="newTemplate">
                                 <option value="">（選ばない：下の教科・単元から選ぶ）</option>
                             </select></div>
-                        <div><label for="newSubject">教科</label><select id="newSubject" required>
+                        <div><label for="newSubject">教科</label><select autocomplete="off" id="newSubject" required>
                                 <option value="">教科を選択</option>
                             </select></div>
-                        <div><label for="newUnit">単元</label><select id="newUnit" required disabled>
+                        <div><label for="newUnit">単元</label><select autocomplete="off" id="newUnit" required disabled>
                                 <option value="">先に教科を選択</option>
                             </select></div>
-                        <div><label for="newQuestionType">問題タイプ</label><select id="newQuestionType">
+                        <div><label for="newQuestionType">問題タイプ</label><select autocomplete="off" id="newQuestionType">
                                 <option value="choice">複数問題で選択肢をまとめる</option>
                                 <option value="fill">回答を直接入力する</option>
                                 <option value="individual">1問ずつ出題（各問4択）</option>
                             </select></div>
-                        <div><label for="releaseMode">生徒への出題時刻</label><select id="releaseMode">
+                        <div><label for="releaseMode">生徒への出題時刻</label><select autocomplete="off" id="releaseMode">
                                 <option value="now">今すぐ公開</option>
                                 <option value="delay">何分後に公開</option>
                                 <option value="datetime">日時を指定して公開</option>
                             </select></div>
                         <div id="delaySettings" class="hidden"><label for="delayMinutes">何分後</label><input
-                                id="delayMinutes" type="number" min="1" value="5"></div>
+                                id="delayMinutes" type="number" min="1" value="5" autocomplete="off"></div>
                         <div id="datetimeSettings" class="hidden"><label for="releaseDateTime">公開日時</label><input
-                                id="releaseDateTime" type="datetime-local"></div>
+                                id="releaseDateTime" type="datetime-local" autocomplete="off"></div>
                     </div>
                     <fieldset class="target-department-fieldset">
                         <legend>対象学年・学科（複数選択できます）</legend>
@@ -711,11 +711,11 @@
                     <p class="muted" id="selectedQuestionCount">0問選択中</p>
                     <div class="actions" style="align-items:end; margin:8px 0">
                         <label for="randomQuestionCount">ランダムに選ぶ問題数</label>
-                        <input id="randomQuestionCount" type="number" min="1" value="5" style="max-width:100px">
+                        <input id="randomQuestionCount" type="number" min="1" value="5" style="max-width:100px" autocomplete="off">
                         <button id="randomSelectQuestions" type="button" class="secondary">条件に合う問題からランダム選択</button>
                     </div>
                     <div id="sourceQuestionList" class="source-question-list" aria-label="選択できる既存問題"></div>
-                    <div class="actions"><button type="submit">選んだ問題でセットを保存</button><button class="secondary"
+                    <div class="actions"><button type="submit">選んだ問題でセットを保存</button><button class="danger"
                             type="button" id="teacherLogoutButton">ログアウト</button></div>
                     <p class="muted" id="authorMessage" role="status"></p>
                 </form>
@@ -723,8 +723,8 @@
             <section class="card hidden" id="teacherRecordsPanel">
                 <div class="actions"><button class="secondary" type="button" data-teacher-menu>先生メニューへ戻る</button></div>
                 <h3>生徒の記録を見る</h3>
-                <div class="actions" style="align-items:end"><div><label for="recordSetFilter">問題セット</label><select id="recordSetFilter"><option value="">すべて</option></select></div>
-                    <div><label for="recordGradeFilter">学年</label><select id="recordGradeFilter"><option value="">すべて</option><option>1年</option><option>2年</option><option>3年</option></select></div>
+                <div class="actions" style="align-items:end"><div><label for="recordSetFilter">問題セット</label><select autocomplete="off" id="recordSetFilter"><option value="">すべて</option></select></div>
+                    <div><label for="recordGradeFilter">学年</label><select autocomplete="off" id="recordGradeFilter"><option value="">すべて</option><option>1年</option><option>2年</option><option>3年</option></select></div>
                     <button class="secondary" type="button" id="refreshTeacherRecords">記録を更新</button>
                     <button class="secondary" type="button" id="downloadTeacherRecords">CSVで保存</button>
                 </div>
@@ -783,8 +783,7 @@
         </section>
         <section class="card hidden" id="teacher">
             <h2 class="section-title">このブラウザの結果一覧</h2>
-            <div class="actions"><button class="secondary" id="csv">CSVを書き出す</button><button class="danger"
-                    id="clear">この端末の記録を削除</button><button class="secondary" id="hideTeacher">閉じる</button></div>
+            <div class="actions"><button class="secondary" id="csv">CSVを書き出す</button><button class="secondary" id="hideTeacher">閉じる</button></div>
             <div class="tablewrap" style="margin-top:14px">
                 <table>
                     <thead>
@@ -1001,7 +1000,7 @@
                     hideViews();
                     document.body.classList.add('auth-mode');
                     $('passwordChangePanel').classList.remove('hidden');
-                    $('pwChangeWho').textContent = 'ユーザーID：' + profile.userId;
+                    $('pwChangeWho').textContent = nameLabel(profile);
                     ['newPassword', 'newPasswordConfirm'].forEach((id) => { $(id).type = 'password'; });
                     document.querySelectorAll('#passwordChangePanel .toggle-pw-btn').forEach((b) => { b.textContent = '表示'; b.setAttribute('aria-pressed', 'false'); });
                     $('newPassword').focus();
@@ -1058,6 +1057,12 @@
             else enterStudent();
         }
 
+        // 「1年 情報ビジネス科 5番さん」の形で表示する（ユーザーIDは表示しない）
+        function nameLabel(p) {
+            const n = Number(p.attendanceNumber);
+            return [p.grade, p.className, `${Number.isNaN(n) || p.attendanceNumber === '' ? (p.attendanceNumber || '') : n}番さん`].filter(Boolean).join(' ');
+        }
+
         function whoLabel() {
             return [activeAccount.grade, activeAccount.className,
                 activeAccount.name ? `${activeAccount.name}先生` : ''].filter(Boolean).join(' ');
@@ -1068,7 +1073,7 @@
             document.body.classList.add('auth-mode');
             viewMode = '';
             $('roleChooser').classList.remove('hidden');
-            $('roleChooserWho').textContent = `ユーザーID：${activeAccount.userId}`;
+            $('roleChooserWho').textContent = nameLabel(activeAccount);
             const hasUrl = Boolean((window.ADMIN_PAGE_URL || '').trim());
             $('chooseAdmin').disabled = !hasUrl;
             $('chooserMessage').textContent = hasUrl ? '' : '管理画面のURLが未設定です（firebase-config.js の ADMIN_PAGE_URL に、Apps Scriptのウェブアプリ URL を入れてください）。';
@@ -1094,7 +1099,7 @@
             viewMode = 'student';
             hideViews();
             $('profile').classList.remove('hidden');
-            $('signedInStudent').textContent = `${activeAccount.grade} ${activeAccount.className} ${Number(activeAccount.attendanceNumber)}番さん`;
+            $('signedInStudent').textContent = nameLabel(activeAccount);
             populateStudentQuestionSets();
         }
 
@@ -1205,7 +1210,7 @@
             $('quizMessage').textContent = '';
             $('choices').innerHTML = options.map((option, index) => `
                 <label class="choice">
-                    <input type="radio" name="singleAnswer" value="${option.isCorrect ? '1' : '0'}">
+                    <input type="radio" name="singleAnswer" value="${option.isCorrect ? '1' : '0'}" autocomplete="off">
                     ${String.fromCharCode(65 + index)}. ${escapeHtml(option.text)}
                 </label>
             `).join('');
@@ -1394,7 +1399,7 @@
                         <div class="target-department-options">
                             ${departments.map((department) => `
                                 <label class="target-department-option">
-                                    <input class="target-department-checkbox" type="checkbox" data-grade="${escapeHtml(grade.name)}" data-department="${escapeHtml(department.name)}">
+                                    <input class="target-department-checkbox" type="checkbox" data-grade="${escapeHtml(grade.name)}" data-department="${escapeHtml(department.name)}" autocomplete="off">
                                     <span>${escapeHtml(department.name)}</span>
                                 </label>
                             `).join('')}
@@ -1464,7 +1469,7 @@
             const matches = getMatchingSourceQuestions();
             $('sourceQuestionList').innerHTML = matches.map(({ question, index }, matchIndex) => `
                 <label class="source-question">
-                    <input type="checkbox" value="${index}" ${selectedSourceQuestionIndexes.has(index) ? 'checked' : ''}>
+                    <input type="checkbox" value="${index}" ${selectedSourceQuestionIndexes.has(index) ? 'checked' : ''} autocomplete="off">
                     <span><b>${matchIndex + 1}. ${escapeHtml(question.c)}</b><br>${escapeHtml(question.q)}</span>
                 </label>
             `).join('') || '<p class="muted">選択した教科・単元に該当する登録済み問題がありません。</p>';
@@ -1785,12 +1790,6 @@
             hideViews();
             $('profile').classList.remove('hidden');
         };
-        $('clear').onclick = () => {
-            if (confirm('このブラウザに保存された記録をすべて削除しますか？')) {
-                localStorage.removeItem(historyKey());
-                renderRecords();
-            }
-        };
         $('csv').onclick = () => {
             const records = JSON.parse(localStorage.getItem(historyKey()) || '[]');
             const rows = [
@@ -1809,6 +1808,12 @@
             link.click();
             URL.revokeObjectURL(url);
         };
+
+        // あとから作られる入力欄も含め、すべて autocomplete をオフにする
+        const noAutocomplete = (root) => root.querySelectorAll('input,select,textarea').forEach((el) => el.setAttribute('autocomplete', 'off'));
+        noAutocomplete(document);
+        new MutationObserver((records) => records.forEach((r) => r.addedNodes.forEach((n) => { if (n.nodeType === 1) { if (/^(INPUT|SELECT|TEXTAREA)$/.test(n.tagName)) n.setAttribute('autocomplete', 'off'); noAutocomplete(n); } })))
+            .observe(document.body, { childList: true, subtree: true });
 
         initFirebase();
         populateSourceQuestionList();
