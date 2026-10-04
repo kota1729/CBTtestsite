@@ -1,20 +1,49 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isTeacher() { return signedIn() && request.auth.token.role == 'teacher'; }   // 先生と管理者
+    function me() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+
     match /users/{uid} {
       // 自分の情報、または教員(role=teacher)なら全員分を読める
-      allow read: if request.auth != null
-        && (request.auth.uid == uid || request.auth.token.role == 'teacher');
+      allow read: if signedIn() && (request.auth.uid == uid || isTeacher());
       // 本人が書き換えられるのは「mustChange を false にする」ことだけ
-      allow update: if request.auth != null && request.auth.uid == uid
+      allow update: if signedIn() && request.auth.uid == uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mustChange'])
         && request.resource.data.mustChange == false;
       allow create, delete: if false;
     }
-    // 管理画面（Apps Script）で作った問題セット：ログイン済みなら読める。書き込みはサーバー（管理画面）だけ
-    match /questionSets/{setId} {
-      allow read: if request.auth != null;
+
+    // テンプレート（管理画面で作る問題のもと）：先生だけが読める。書き込みは管理画面(Apps Script)だけ
+    match /templates/{id} {
+      allow read: if isTeacher();
       allow write: if false;
+    }
+
+    // 公開された問題セット：ログイン済みなら読める。先生が作成・削除できる（書き換えは不可）
+    match /questionSets/{setId} {
+      allow read: if signedIn();
+      allow create: if isTeacher() && request.resource.data.createdBy == request.auth.uid;
+      allow delete: if isTeacher();
+      allow update: if false;
+    }
+
+    // 受験記録：本人だけが、自分の分を1回ずつ追加できる（あとから書き換え・削除はできない）。読めるのは先生と本人
+    match /results/{id} {
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['uid', 'userId', 'grade', 'className', 'attendanceNumber',
+             'setTitle', 'setId', 'subject', 'unit', 'mode', 'score', 'total', 'at'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.userId == me().userId
+        && request.resource.data.grade == me().grade
+        && request.resource.data.className == me().className
+        && request.resource.data.attendanceNumber == me().attendanceNumber
+        && request.resource.data.score is int && request.resource.data.total is int
+        && request.resource.data.score >= 0 && request.resource.data.score <= request.resource.data.total
+        && request.resource.data.total >= 1 && request.resource.data.total <= 1000;
+      allow read: if signedIn() && (isTeacher() || resource.data.uid == request.auth.uid);
+      allow update, delete: if false;
     }
   }
 }

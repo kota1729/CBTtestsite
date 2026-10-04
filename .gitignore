@@ -3,3 +3,4 @@ accounts.csv
 secret/
 *serviceAccount*.json
 *-firebase-adminsdk-*.json
+firestore.rules

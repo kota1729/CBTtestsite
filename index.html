@@ -603,7 +603,7 @@
     </style>
 </head>
 
-<body>
+<body class="auth-mode">
     <main class="wrap">
         <header class="hero">
             <h1>教科別 学習ミニテスト</h1>
@@ -639,13 +639,25 @@
             <div class="auth-btns"><button id="savePassword" type="button">変更してはじめる</button><button class="secondary" id="cancelPassword" type="button">キャンセル</button></div>
             <p class="muted auth-msg" id="pwChangeMessage" role="status"></p>
         </section>
+        <section class="card hidden" id="roleChooser">
+            <h1 class="auth-title">どの画面を開きますか？</h1>
+            <p class="auth-sub" id="roleChooserWho"></p>
+            <div class="auth-form">
+                <button type="button" id="chooseTeacher">先生画面（問題の公開・生徒の記録）</button>
+                <button type="button" id="chooseStudent">生徒画面（問題を解く）</button>
+                <button type="button" id="chooseAdmin" class="secondary">管理画面（生徒の登録・パスワード・問題テンプレート）</button>
+            </div>
+            <p class="muted auth-msg" id="chooserMessage" role="status"></p>
+            <div class="auth-btns"><button class="secondary" type="button" id="chooserLogout">ログアウト</button></div>
+        </section>
         <section class="card hidden" id="profile">
             <h2 class="section-title">小テスト</h2>
             <p id="signedInStudent" class="muted">ログイン中</p>
             <h3>実施できる問題セット</h3>
             <p class="muted">問題セットを押すと、テストが始まります。</p>
             <div id="questionSetList" class="question-set-list" aria-label="実施できる問題セット"></div>
-            <div class="actions"><button class="secondary" id="showTeacher">結果一覧</button><button class="secondary"
+            <div class="actions"><button class="secondary" id="showTeacher">結果一覧</button><button class="secondary hidden admin-only"
+                    type="button" data-to-chooser>画面の選択へ戻る</button><button class="secondary"
                     id="logoutButton">ログアウト</button></div>
         </section>
         <section class="card hidden" id="teacherDashboard">
@@ -661,26 +673,21 @@
                 <button class="question-set-card" type="button" data-teacher-view="current"><span
                         class="question-set-title">現在作っている問題</span><span class="question-set-action">問題セット一覧を開く
                         →</span></button>
-                <div class="actions"><button class="secondary" type="button" id="teacherMenuLogout">ログアウト</button></div>
+                <div class="actions"><button class="secondary hidden admin-only" type="button" data-to-chooser>画面の選択へ戻る</button><button class="secondary" type="button" id="teacherMenuLogout">ログアウト</button></div>
             </div>
             <section class="hidden" id="teacherCreatePanel">
                 <div class="actions"><button class="secondary" type="button" data-teacher-menu>先生メニューへ戻る</button></div>
                 <h3>問題を作る</h3>
-                <p class="muted">ここで作った問題セットは、<b>この端末の中だけ</b>に保存されます。生徒全員に配る問題は、管理画面（Apps Script）で作ってください。</p>
+                <p class="muted">管理画面で作った「テンプレート」を選ぶと、問題がまとめて選ばれます。学年・学科と公開時刻を決めて保存すると、対象の生徒に表示されます。</p>
                 <form id="questionForm">
                     <div class="grid">
                         <div><label for="newQuestionSet">名前（問題セット名）</label><input id="newQuestionSet" required
                                 placeholder="例：数学 I 第1章確認テスト"></div>
+                        <div style="grid-column:1/-1"><label for="newTemplate">テンプレート（管理画面で作った問題）</label><select id="newTemplate">
+                                <option value="">（選ばない：下の教科・単元から選ぶ）</option>
+                            </select></div>
                         <div><label for="newSubject">教科</label><select id="newSubject" required>
                                 <option value="">教科を選択</option>
-                                <option>情報処理</option>
-                                <option>国語</option>
-                                <option>数学</option>
-                                <option>英語</option>
-                                <option>社会</option>
-                                <option>理科</option>
-                                <option>簿記</option>
-                                <option>ビジネス基礎</option>
                             </select></div>
                         <div><label for="newUnit">単元</label><select id="newUnit" required disabled>
                                 <option value="">先に教科を選択</option>
@@ -722,8 +729,12 @@
             <section class="card hidden" id="teacherRecordsPanel">
                 <div class="actions"><button class="secondary" type="button" data-teacher-menu>先生メニューへ戻る</button></div>
                 <h3>生徒の記録を見る</h3>
-                <div class="actions"><button class="secondary" type="button" id="refreshTeacherRecords">記録を更新</button>
+                <div class="actions" style="align-items:end"><div><label for="recordSetFilter">問題セット</label><select id="recordSetFilter"><option value="">すべて</option></select></div>
+                    <div><label for="recordGradeFilter">学年</label><select id="recordGradeFilter"><option value="">すべて</option><option>1年</option><option>2年</option><option>3年</option></select></div>
+                    <button class="secondary" type="button" id="refreshTeacherRecords">記録を更新</button>
+                    <button class="secondary" type="button" id="downloadTeacherRecords">CSVで保存</button>
                 </div>
+                <p class="muted" id="teacherRecordsInfo" role="status"></p>
                 <div class="tablewrap" style="margin-top:14px">
                     <table>
                         <thead>
@@ -731,6 +742,7 @@
                                 <th>日時</th>
                                 <th>学年・クラス</th>
                                 <th>出席番号</th>
+                                <th>ユーザーID</th>
                                 <th>問題セット</th>
                                 <th>得点</th>
                             </tr>
@@ -741,7 +753,7 @@
             </section>
             <section class="card hidden" id="teacherCurrentQuestionsPanel">
                 <div class="actions"><button class="secondary" type="button" data-teacher-menu>先生メニューへ戻る</button></div>
-                <h3>現在作っている問題 <span class="muted" id="teacherQuestionCount"></span></h3>
+                <h3>公開している問題セット <span class="muted" id="teacherQuestionCount"></span></h3>
                 <ol id="teacherQuestionList" class="teacher-question-list"></ol>
             </section>
         </section>
@@ -770,6 +782,7 @@
         <section class="card hidden" id="result">
             <h2 class="section-title">今回の結果</h2>
             <div class="score" id="score"></div>
+            <p class="muted" id="saveStatus" role="status"></p>
             <div id="feedback"></div>
             <div class="actions"><button id="again">もう一度挑戦</button><button class="secondary" id="back">マイページに戻る</button>
             </div>
@@ -811,16 +824,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script src="./firebase-config.js"></script>
-    <script src="./subject/joho_shori.js"></script>
-    <script src="./subject/kokugo.js"></script>
-    <script src="./subject/sugaku.js"></script>
-    <script src="./subject/eigo.js"></script>
-    <script src="./subject/shakai.js"></script>
-    <script src="./subject/rika.js"></script>
-    <script src="./subject/boki.js"></script>
-    <script src="./subject/business_kiso.js"></script>
     <script src="./school/schools.js"></script>
-    <script>window.questionBank = Object.entries(window.subjectQuestionBanks || {}).flatMap(([subject, bank]) => bank.map((question) => ({ ...question, subject })));</script>
+    <script>window.questionBank = [];   // 先生がログインしたときに、管理画面で作ったテンプレート（Firestoreのtemplates）から読み込みます</script>
     <script>
         const $ = (id) => document.getElementById(id);
         let activeSchool = null;
@@ -836,6 +841,7 @@
         let schoolScript = null;
         let availableQuestionSets = [];
         let selectedQuestionSet = null;
+        let viewMode = '';
 
         function shuffle(items) {
             return [...items].sort(() => Math.random() - 0.5);
@@ -845,20 +851,7 @@
             return `term_quiz_demo_records_v1::${activeSchool?.id || 'unknown'}`;
         }
 
-        function customQuestionKey() {
-            return `term_quiz_custom_questions_v1::${activeSchool?.id || 'unknown'}`;
-        }
-
-        function getAllQuestions() {
-            return [...window.questionBank, ...getCustomQuestions()];
-        }
-
-        // この端末（先生メニュー）で作った問題
-        function getLocalQuestions() {
-            return JSON.parse(localStorage.getItem(customQuestionKey()) || '[]');
-        }
-
-        // 管理画面（Apps Script）で作った問題＝Firestoreの questionSets
+        // 先生が公開した問題セット＝Firestoreの questionSets（生徒にも先生にも読み込む）
         let remoteQuestions = [];
         async function loadRemoteQuestions() {
             if (!db) return [];
@@ -868,9 +861,9 @@
                 snap.forEach((doc) => {
                     const set = doc.data();
                     (set.questions || []).forEach((item) => out.push({
-                        c: item.c || set.unit || set.subject || '', setTitle: set.setTitle, subject: set.subject || '',
+                        c: item.c || set.unit || set.subject || '', setId: doc.id, setTitle: set.setTitle, subject: set.subject || '',
                         unit: set.unit || '', targets: set.targets || [], type: set.type, q: item.q, a: item.a,
-                        k: item.k || 0, releaseAt: set.releaseAt || '', remote: true,
+                        k: item.k || 0, e: item.e || '', releaseAt: set.releaseAt || '', createdBy: set.createdBy || '', remote: true,
                     }));
                 });
                 return out;
@@ -879,13 +872,35 @@
             }
         }
 
+        // 管理画面（Apps Script）で作った「テンプレート」＝Firestoreの templates（先生だけが読める）
+        let templateList = [];
+        async function loadTemplates() {
+            templateList = [];
+            window.questionBank = [];
+            if (!db) return;
+            try {
+                const snap = await db.collection('templates').get();
+                snap.forEach((doc) => {
+                    const t = doc.data();
+                    templateList.push({ id: doc.id, title: t.setTitle || '', subject: t.subject || '', unit: t.unit || '', count: (t.questions || []).length });
+                    (t.questions || []).forEach((item) => window.questionBank.push({
+                        c: item.c || t.unit || t.subject || '', q: item.q, a: item.a, k: item.k || 0, e: item.e || '',
+                        subject: t.subject || '未設定', unit: t.unit || item.c || '', template: t.setTitle || '',
+                    }));
+                });
+                templateList.sort((x, y) => x.subject.localeCompare(y.subject, 'ja') || x.title.localeCompare(y.title, 'ja'));
+            } catch {
+                templateList = [];
+            }
+        }
+
         function getCustomQuestions() {
-            return [...remoteQuestions, ...getLocalQuestions()];
+            return remoteQuestions;
         }
 
         function hideViews() {
             document.body.classList.remove('auth-mode');
-            ['loginPanel', 'passwordChangePanel', 'profile', 'quiz', 'result', 'teacher', 'teacherDashboard'].forEach((id) => {
+            ['loginPanel', 'passwordChangePanel', 'roleChooser', 'profile', 'quiz', 'result', 'teacher', 'teacherDashboard'].forEach((id) => {
                 $(id).classList.add('hidden');
             });
         }
@@ -902,6 +917,8 @@
             $('pwChangeMessage').textContent = '';
             if (auth) auth.signOut().catch(() => {});
             remoteQuestions = [];
+            templateList = [];
+            window.questionBank = [];
             activeAccount = null;
             activeClass = null;
             selectedQuestionSet = null;
@@ -1042,22 +1059,62 @@
             };
             remoteQuestions = await loadRemoteQuestions();
             $('passwordInput').value = '';
-            hideViews();
-            if (profile.role === 'teacher') {
-                $('teacherDashboard').classList.remove('hidden');
-                showTeacherMenu();
-                $('signedInTeacher').textContent = [activeAccount.grade, activeAccount.className,
-                    activeAccount.name ? `${activeAccount.name}先生` : '教員'].filter(Boolean).join(' ');
-                populateTargetDepartmentList();
-                populateSourceQuestionList();
-                renderTeacherQuestions();
-                renderTeacherRecords();
-            } else {
-                $('profile').classList.remove('hidden');
-                $('signedInStudent').textContent = `${activeAccount.grade} ${activeAccount.className} ${Number(activeAccount.attendanceNumber)}番さん`;
-                populateStudentQuestionSets();
-            }
+            document.querySelectorAll('.admin-only').forEach((el) => el.classList.toggle('hidden', profile.role !== 'admin'));
+            if (profile.role === 'admin') showRoleChooser();
+            else if (profile.role === 'teacher') await enterTeacher();
+            else enterStudent();
         }
+
+        function whoLabel() {
+            return [activeAccount.grade, activeAccount.className,
+                activeAccount.name ? `${activeAccount.name}先生` : ''].filter(Boolean).join(' ');
+        }
+
+        function showRoleChooser() {
+            hideViews();
+            document.body.classList.add('auth-mode');
+            viewMode = '';
+            $('roleChooser').classList.remove('hidden');
+            $('roleChooserWho').textContent = `ユーザーID：${activeAccount.userId}`;
+            const hasUrl = Boolean((window.ADMIN_PAGE_URL || '').trim());
+            $('chooseAdmin').disabled = !hasUrl;
+            $('chooserMessage').textContent = hasUrl ? '' : '管理画面のURLが未設定です（firebase-config.js の ADMIN_PAGE_URL に、Apps Scriptのウェブアプリ URL を入れてください）。';
+        }
+
+        async function enterTeacher() {
+            viewMode = 'teacher';
+            await loadTemplates();
+            hideViews();
+            $('teacherDashboard').classList.remove('hidden');
+            showTeacherMenu();
+            $('signedInTeacher').textContent = whoLabel() || '教員';
+            populateTargetDepartmentList();
+            populateTemplateOptions();
+            populateSubjectOptions();
+            populateUnitList();
+            populateSourceQuestionList();
+            renderTeacherQuestions();
+            renderTeacherRecords();
+        }
+
+        function enterStudent() {
+            viewMode = 'student';
+            hideViews();
+            $('profile').classList.remove('hidden');
+            $('signedInStudent').textContent = `${activeAccount.grade} ${activeAccount.className} ${Number(activeAccount.attendanceNumber)}番さん`;
+            populateStudentQuestionSets();
+        }
+
+        $('chooseTeacher').onclick = () => { $('chooseTeacher').disabled = true; enterTeacher().finally(() => { $('chooseTeacher').disabled = false; }); };
+        $('chooseStudent').onclick = enterStudent;
+        $('chooseAdmin').onclick = () => {
+            const url = (window.ADMIN_PAGE_URL || '').trim();
+            if (url) window.open(url, '_blank', 'noopener');
+        };
+        $('chooserLogout').onclick = showLogin;
+        document.addEventListener('click', (event) => {
+            if (event.target.closest('[data-to-chooser]')) showRoleChooser();
+        });
 
         function studentProfile() {
             return {
@@ -1292,7 +1349,7 @@
             $('feedback').innerHTML = questions.map((question, index) => `
                 <div class="feedback ${answers[index] ? 'good' : 'bad'}">
                     <b>${index + 1}. ${answers[index] ? '正解' : '不正解'}：${escapeHtml(question.c)}</b>
-                    ${answers[index] ? '' : `<div>正解：${escapeHtml(question.a[question.k])}</div>`}
+                    ${answers[index] ? '' : `<div>正解：${escapeHtml(question.a[question.k])}</div>${question.e ? `<div class="muted">解説：${escapeHtml(question.e)}</div>` : ''}`}
                 </div>
             `).join('');
 
@@ -1305,6 +1362,26 @@
                 total: questions.length,
             });
             localStorage.setItem(historyKey(), JSON.stringify(records));
+            saveResultToCloud(correctCount);
+        }
+
+        // 記録をFirestoreに保存（先生が「生徒の記録を見る」で全員分を見られる）
+        function saveResultToCloud(correctCount) {
+            const status = $('saveStatus');
+            status.textContent = '記録を保存しています…';
+            const rec = {
+                uid: auth && auth.currentUser ? auth.currentUser.uid : '',
+                userId: activeAccount.userId, grade: activeAccount.grade, className: activeAccount.className,
+                attendanceNumber: String(activeAccount.attendanceNumber || ''),
+                setTitle: selectedQuestionSet?.title || '', setId: questions[0]?.setId || '',
+                subject: selectedQuestionSet?.subject || '', unit: selectedQuestionSet?.unit || '',
+                mode: questionMode, score: correctCount, total: questions.length,
+                at: new Date().toISOString(),
+            };
+            if (!db || !rec.uid) { status.textContent = '記録を先生に送れませんでした（ログイン状態を確認してください）。'; return; }
+            db.collection('results').add(rec)
+                .then(() => { status.textContent = '記録を先生に送りました。'; })
+                .catch(() => { status.textContent = '記録を先生に送れませんでした。電波の良いところでもう一度解くか、先生に伝えてください。'; });
         }
 
         function escapeHtml(value) {
@@ -1348,6 +1425,20 @@
             return targets.map((target) => `${target.grade} ${target.departments.join('・')}`).join('、') || '対象未設定';
         }
 
+        function populateTemplateOptions() {
+            $('newTemplate').innerHTML = '<option value="">（選ばない：下の教科・単元から選ぶ）</option>' + templateList.map((t) =>
+                `<option value="${escapeHtml(t.id)}">${escapeHtml(t.title)}（${t.count}問）</option>`).join('');
+            $('sourceQuestionHint').textContent = templateList.length
+                ? '教科を選ぶと単元のリストが表示されます。「すべて」を選ぶと、その教科のテンプレートの問題をすべて表示します。'
+                : 'テンプレートがまだありません。管理画面で、問題セットを作るか、教科ファイルを取り込んでください。';
+        }
+
+        function populateSubjectOptions() {
+            const subjects = [...new Set(window.questionBank.map((question) => question.subject).filter(Boolean))];
+            $('newSubject').innerHTML = '<option value="">教科を選択</option>' + subjects.map((subject) =>
+                `<option>${escapeHtml(subject)}</option>`).join('');
+        }
+
         function populateUnitList() {
             const selectedSubject = $('newSubject').value;
             const unitSelect = $('newUnit');
@@ -1374,7 +1465,8 @@
                 .filter(({ question }) => {
                     const subject = question.subject || '情報処理';
                     const unit = question.unit || question.c;
-                    return (!selectedSubject || subject === selectedSubject) && (selectedUnit === '__all__' || unit === selectedUnit);
+                    const tpl = $('newTemplate').value ? (templateList.find((t) => t.id === $('newTemplate').value)?.title || '') : '';
+                    return (!tpl || question.template === tpl) && (!selectedSubject || subject === selectedSubject) && (selectedUnit === '__all__' || unit === selectedUnit);
                 });
         }
 
@@ -1419,7 +1511,20 @@
             populateUnitList();
             populateSourceQuestionList();
         }
-        $('newSubject').addEventListener('change', updateSourceQuestionsFromSubjectUnit);
+        $('newSubject').addEventListener('change', () => { $('newTemplate').value = ''; updateSourceQuestionsFromSubjectUnit(); });
+        $('newTemplate').addEventListener('change', () => {
+            selectedSourceQuestionIndexes.clear();
+            const t = templateList.find((item) => item.id === $('newTemplate').value);
+            if (t) {
+                $('newSubject').value = t.subject || '';
+                populateUnitList();
+                $('newUnit').value = '__all__';
+                if (!$('newQuestionSet').value.trim()) $('newQuestionSet').value = t.title;
+                getMatchingSourceQuestions().forEach(({ index }) => selectedSourceQuestionIndexes.add(index));
+            }
+            populateSourceQuestionList();
+            if (t) $('authorMessage').textContent = `テンプレート「${t.title}」の問題を、すべて選びました。必要ないものはチェックを外してください。`;
+        });
         populateUnitList();
         populateSourceQuestionList();
         $('newUnit').addEventListener('change', () => {
@@ -1443,25 +1548,68 @@
                     const releaseAt = set.releaseAt ? new Date(set.releaseAt) : null;
                     const isScheduled = releaseAt && releaseAt > new Date();
                     const status = isScheduled ? `公開予定：${releaseAt.toLocaleString('ja-JP')}` : '公開中';
-                    return `<li><div><b>${escapeHtml(set.setTitle)}</b> / ${escapeHtml(set.subject || '教科未設定')}・${escapeHtml(set.unit || '単元未設定')} / ${escapeHtml(formatTargets(set.targets))} / ${set.type === 'fill' ? '入力式' : set.type === 'individual' ? '1問ずつ（各問4択）' : '共通選択肢式'} / ${set.count}問 / ${status}</div>${set.remote ? '<span class="muted">管理画面で作成したセット（削除は管理画面から）</span>' : `<button class="danger" type="button" data-delete-set="${escapeHtml(set.setTitle)}">この問題を削除</button>`}</li>`;
+                    return `<li><div><b>${escapeHtml(set.setTitle)}</b> / ${escapeHtml(set.subject || '教科未設定')}・${escapeHtml(set.unit || '単元未設定')} / ${escapeHtml(formatTargets(set.targets))} / ${set.type === 'fill' ? '入力式' : set.type === 'individual' ? '1問ずつ（各問4択）' : '共通選択肢式'} / ${set.count}問 / ${status}</div><button class="danger" type="button" data-delete-set="${escapeHtml(set.setId)}" data-delete-title="${escapeHtml(set.setTitle)}">このセットを削除</button></li>`;
                 }).join('')
                 : '<li>まだ作成した問題はありません。</li>';
         }
 
-        function renderTeacherRecords() {
-            const records = JSON.parse(localStorage.getItem(historyKey()) || '[]');
+        let cloudRecords = [];
+        async function renderTeacherRecords() {
+            const info = $('teacherRecordsInfo');
+            info.textContent = '読み込み中…';
+            try {
+                const snap = await db.collection('results').orderBy('at', 'desc').limit(2000).get();
+                cloudRecords = [];
+                snap.forEach((doc) => cloudRecords.push(doc.data()));
+                info.textContent = '';
+            } catch {
+                cloudRecords = [];
+                info.textContent = '記録を読み込めませんでした（Firestoreのルールが更新されているか確認してください）。';
+            }
+            const current = $('recordSetFilter').value;
+            const titles = [...new Set(cloudRecords.map((r) => r.setTitle).filter(Boolean))].sort((x, y) => x.localeCompare(y, 'ja'));
+            $('recordSetFilter').innerHTML = '<option value="">すべて</option>' + titles.map((t) =>
+                `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+            $('recordSetFilter').value = titles.includes(current) ? current : '';
+            drawTeacherRecords();
+        }
+
+        function filteredRecords() {
+            const set = $('recordSetFilter').value, grade = $('recordGradeFilter').value;
+            return cloudRecords.filter((r) => (!set || r.setTitle === set) && (!grade || r.grade === grade));
+        }
+
+        function drawTeacherRecords() {
+            const records = filteredRecords();
+            const fmt = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : d.toLocaleString('ja-JP'); };
             $('teacherRecords').innerHTML = records.length
                 ? records.map((record) => `
                     <tr>
-                        <td>${escapeHtml(record.date)}</td>
+                        <td>${escapeHtml(fmt(record.at))}</td>
                         <td>${escapeHtml(record.grade)} ${escapeHtml(record.className)}</td>
-                        <td>${escapeHtml(record.number)}</td>
-                        <td>${escapeHtml(record.questionSet || '全範囲')}</td>
+                        <td>${escapeHtml(Number(record.attendanceNumber) || record.attendanceNumber)}</td>
+                        <td>${escapeHtml(record.userId)}</td>
+                        <td>${escapeHtml(record.setTitle || '—')}</td>
                         <td>${record.score}/${record.total}</td>
                     </tr>
                 `).join('')
-                : '<tr><td colspan="5">記録はありません</td></tr>';
+                : '<tr><td colspan="6">記録はありません</td></tr>';
         }
+
+        $('recordSetFilter').addEventListener('change', drawTeacherRecords);
+        $('recordGradeFilter').addEventListener('change', drawTeacherRecords);
+        $('downloadTeacherRecords').addEventListener('click', () => {
+            const rows = [
+                ['日時', '学年', '学科', '出席番号', 'ユーザーID', '問題セット', '教科', '単元', '得点', '問題数'],
+                ...filteredRecords().map((r) => [r.at, r.grade, r.className, r.attendanceNumber, r.userId, r.setTitle, r.subject, r.unit, r.score, r.total]),
+            ];
+            const csv = '\uFEFF' + rows.map((row) => row.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+            link.download = 'student_results.csv';
+            link.click();
+            URL.revokeObjectURL(link.href);
+        });
 
         function showTeacherMenu() {
             $('teacherMenu').classList.remove('hidden');
@@ -1494,16 +1642,22 @@
         });
         $('teacherMenuLogout').addEventListener('click', showLogin);
         $('refreshTeacherRecords').addEventListener('click', renderTeacherRecords);
-        $('teacherQuestionList').addEventListener('click', (event) => {
+        $('teacherQuestionList').addEventListener('click', async (event) => {
             const button = event.target.closest('[data-delete-set]');
             if (!button) return;
-            const setTitle = button.dataset.deleteSet;
-            const customQuestions = getLocalQuestions().filter((question) => question.setTitle !== setTitle);
-            localStorage.setItem(customQuestionKey(), JSON.stringify(customQuestions));
-            renderTeacherQuestions();
+            if (!window.confirm(`「${button.dataset.deleteTitle}」を削除します。生徒の画面からも消えます。よろしいですか？`)) return;
+            button.disabled = true;
+            try {
+                await db.collection('questionSets').doc(button.dataset.deleteSet).delete();
+                remoteQuestions = await loadRemoteQuestions();
+                renderTeacherQuestions();
+            } catch {
+                button.disabled = false;
+                window.alert('削除できませんでした。もう一度試してください。');
+            }
         });
 
-        $('questionForm').onsubmit = (event) => {
+        $('questionForm').onsubmit = async (event) => {
             event.preventDefault();
             const type = $('newQuestionType').value;
             const setTitle = $('newQuestionSet').value.trim();
@@ -1543,29 +1697,35 @@
                 releaseAt = new Date().toISOString();
             }
 
-            const customQuestions = getLocalQuestions();
-            selectedIndexes.forEach((index) => {
-                const source = window.questionBank[index];
-                customQuestions.push({
-                    c: source.c,
-                    setTitle,
-                    subject,
-                    unit,
-                    targets,
-                    type,
-                    q: source.q,
-                    a: type === 'fill' ? [source.a[source.k]] : [...source.a],
-                    k: type === 'fill' ? 0 : source.k,
-                    releaseAt,
-                    sourceIndex: index,
-                });
-            });
-            localStorage.setItem(customQuestionKey(), JSON.stringify(customQuestions));
+            const doc = {
+                setTitle, subject, unit, targets, type, releaseAt,
+                questions: selectedIndexes.map((index) => {
+                    const source = window.questionBank[index];
+                    return {
+                        c: source.c || '', q: source.q, ...(source.e ? { e: source.e } : {}),
+                        a: type === 'fill' ? [source.a[source.k]] : [...source.a],
+                        k: type === 'fill' ? 0 : source.k,
+                    };
+                }),
+                createdBy: auth.currentUser.uid, createdByUserId: activeAccount.userId,
+                createdAt: new Date().toISOString(),
+            };
+            const submitButton = $('questionForm').querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            try {
+                await db.collection('questionSets').add(doc);
+                remoteQuestions = await loadRemoteQuestions();
+            } catch {
+                $('authorMessage').textContent = '保存できませんでした。通信とFirestoreのルール（更新済みか）を確認してください。';
+                return;
+            } finally {
+                submitButton.disabled = false;
+            }
             const scheduleLabel = $('releaseMode').value === 'now' ? '公開しました' : `公開予約しました（${new Date(releaseAt).toLocaleString('ja-JP')}）`;
             $('authorMessage').textContent = `「${setTitle}」を${scheduleLabel}。`;
             $('newQuestionSet').value = '';
             $('newSubject').value = '';
-            $('newUnit').value = '';
+            $('newTemplate').value = '';
             populateUnitList();
             document.querySelectorAll('.target-department-checkbox:checked').forEach((checkbox) => {
                 checkbox.checked = false;
@@ -1664,7 +1824,7 @@
         populateSourceQuestionList();
         updateReleaseFields();
         window.setInterval(() => {
-            if (activeAccount?.role === 'student' && !$('profile').classList.contains('hidden')) {
+            if (viewMode === 'student' && !$('profile').classList.contains('hidden')) {
                 populateStudentQuestionSets();
             }
         }, 30_000);

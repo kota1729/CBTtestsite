@@ -19,7 +19,6 @@ CBTtestsite/
 ├─ firebase-config.js   Firebaseの設定値（公開してよい値）
 ├─ firestore.rules      Firestoreのルール（Firebaseの画面に貼る）
 ├─ school/              学年・学科の一覧
-├─ subject/             教科の問題ファイル（お手元の8ファイルを入れる）
 └─ .gitignore
 ```
 
@@ -35,7 +34,7 @@ CBTtestsite/
 ## 2. GitHubで公開する（VS Codeのターミナル）
 Macは、Gitが未インストールだと `git --version` で案内が出ます（「インストール」を押すだけ）。Windowsは https://git-scm.com から入れます。
 
-1. `subject/` に、教科の問題ファイル8つ（`joho_shori.js` `kokugo.js` `sugaku.js` `eigo.js` `shakai.js` `rika.js` `boki.js` `business_kiso.js`）を入れる（案内の `.txt` は削除）。
+1. `subject/` フォルダは使いません（教科の問題は、管理画面の「教科ファイルの取り込み」で登録します）。`firebase-config.js` の `ADMIN_PAGE_URL` に、管理画面（Apps Script）のURLを入れると、管理者の「管理画面」ボタンが使えます。
 2. GitHubで、空のリポジトリ `CBTtestsite` を作る（**Public**。READMEなどは追加しない）。
 3. VS Codeで `CBTtestsite` を開き、ターミナルで：
    ```
@@ -75,7 +74,8 @@ git push
 | 正しいのに「IDまたはパスワードが違います」 | 登録が未実施／IDの打ち間違い／パスワード変更済み（変更後のものを入れる） |
 | 「アカウント情報が見つかりません」 | Firestoreに生徒情報が無い。管理画面で「再発行」で登録し直す |
 | 問題が表示されない | Firestoreのルールを公開したか／`index.html` をプッシュしたか／生徒が入り直したか |
-| 教科の問題が空 | `subject/` をプッシュしたか。ファイル名の大文字小文字（GitHub Pagesは区別する） |
+| 先生画面で、テンプレートや教科の選択肢が空 | 管理画面で、テンプレートを作る／教科ファイルを取り込む。Firestoreのルールを公開し直す |
+| 記録が先生画面に出ない | Firestoreのルール（`results`）を公開したか。生徒が解き終えた直後に「記録を先生に送りました」と出たか |
 | URLが404 | 反映待ち（数分）。`index.html` がリポジトリの一番上にあるか |
 | `git push` で認証を求められる | ブラウザのサインインを許可する。ユーザー名とパスワードを聞かれたら、アクセストークンが必要（画面の文章を確認） |
 
