@@ -710,6 +710,8 @@
                         <label for="randomQuestionCount">ランダムに選ぶ問題数</label>
                         <input id="randomQuestionCount" type="number" min="1" value="5" style="max-width:100px" autocomplete="off">
                         <button id="randomSelectQuestions" type="button" class="secondary">条件に合う問題からランダム選択</button>
+                        <button id="selectAllQuestions" type="button" class="secondary">すべての問題を選択</button>
+                        <button id="clearAllQuestions" type="button" class="secondary">選択をすべて外す</button>
                     </div>
                     <div id="sourceQuestionList" class="source-question-list" aria-label="選択できる既存問題"></div>
                     <div class="actions"><button type="submit">選んだ問題でセットを保存</button><button class="danger"
@@ -724,6 +726,7 @@
                     <div><label for="recordGradeFilter">学年</label><select autocomplete="off" id="recordGradeFilter"><option value="">すべて</option><option>1年</option><option>2年</option><option>3年</option></select></div>
                     <button class="secondary" type="button" id="refreshTeacherRecords">記録を更新</button>
                     <button class="secondary" type="button" id="downloadTeacherRecords">CSVで保存</button>
+                    <button class="danger" type="button" id="deleteAllRecords">記録を全て削除</button>
                 </div>
                 <p class="muted" id="teacherRecordsInfo" role="status"></p>
                 <div class="tablewrap" style="margin-top:14px">
@@ -1489,6 +1492,18 @@
             $('selectedQuestionCount').textContent = `${selectedSourceQuestionIndexes.size}問選択中`;
         }
 
+        $('selectAllQuestions').addEventListener('click', () => {
+            const matches = getMatchingSourceQuestions();
+            matches.forEach(({ index }) => selectedSourceQuestionIndexes.add(index));
+            $('authorMessage').textContent = `${matches.length}問をすべて選択しました。`;
+            populateSourceQuestionList();
+        });
+        $('clearAllQuestions').addEventListener('click', () => {
+            selectedSourceQuestionIndexes.clear();
+            $('authorMessage').textContent = '';
+            populateSourceQuestionList();
+        });
+
         $('randomSelectQuestions').addEventListener('click', () => {
             const matches = getMatchingSourceQuestions();
             const count = Number($('randomQuestionCount').value);
@@ -1517,11 +1532,7 @@
         $('newUnit').addEventListener('change', () => {
             selectedSourceQuestionIndexes.clear();
             const unit = $('newUnit').value;
-            if (unit && unit !== '__all__') {
-                getMatchingSourceQuestions().forEach(({ index }) => selectedSourceQuestionIndexes.add(index));
-                if (!$('newQuestionSet').value.trim()) $('newQuestionSet').value = `${$('newSubject').value}：${unit}`;
-                $('authorMessage').textContent = `「${unit}」の問題をすべて選びました。必要ないものはチェックを外してください。`;
-            }
+            if (unit && unit !== '__all__' && !$('newQuestionSet').value.trim()) $('newQuestionSet').value = `${$('newSubject').value}：${unit}`;
             populateSourceQuestionList();
         });
         $('releaseMode').addEventListener('change', updateReleaseFields);
@@ -1557,7 +1568,7 @@
                     ? db.collection('results').orderBy('at', 'desc').limit(3000)
                     : db.collection('results').where('grade', '==', activeAccount.grade).where('className', '==', activeAccount.className)).get();
                 cloudRecords = [];
-                snap.forEach((doc) => cloudRecords.push(doc.data()));
+                snap.forEach((doc) => cloudRecords.push({ ...doc.data(), _id: doc.id }));
                 cloudRecords.sort((x, y) => String(y.at).localeCompare(String(x.at)));
                 $('recordGradeFilter').parentElement.classList.toggle('hidden', !isAdmin);
                 if (!isAdmin) $('recordGradeFilter').value = '';
@@ -1596,6 +1607,26 @@
                 : '<tr><td colspan="6">記録はありません</td></tr>';
         }
 
+        $('deleteAllRecords').addEventListener('click', async () => {
+            const list = [...cloudRecords];
+            const info = $('teacherRecordsInfo');
+            if (!list.length) { info.textContent = '削除する記録はありません。'; return; }
+            const scope = activeAccount.role === 'admin' ? '全学年・全学科' : `${activeAccount.grade} ${activeAccount.className}`;
+            if (!confirm(`${scope}の生徒の記録 ${list.length}件を、すべて削除します。元に戻せません。よろしいですか？`)) return;
+            $('deleteAllRecords').disabled = true;
+            info.textContent = '削除中…';
+            try {
+                for (let i = 0; i < list.length; i += 20) {
+                    await Promise.all(list.slice(i, i + 20).map((r) => db.collection('results').doc(r._id).delete()));
+                }
+                await renderTeacherRecords();
+                $('teacherRecordsInfo').textContent = `${list.length}件の記録を削除しました。`;
+            } catch {
+                info.textContent = '削除できませんでした（Firestoreのルールを更新したか確認してください）。';
+                await renderTeacherRecords().catch(() => {});
+            }
+            $('deleteAllRecords').disabled = false;
+        });
         $('recordSetFilter').addEventListener('change', drawTeacherRecords);
         $('recordGradeFilter').addEventListener('change', drawTeacherRecords);
         $('downloadTeacherRecords').addEventListener('click', () => {
