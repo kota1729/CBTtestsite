@@ -679,9 +679,6 @@
                     <div class="grid">
                         <div><label for="newQuestionSet">名前（問題セット名）</label><input id="newQuestionSet" required
                                 placeholder="例：数学 I 第1章確認テスト" autocomplete="off"></div>
-                        <div style="grid-column:1/-1"><label for="newTemplate">テンプレート（管理画面で作った問題）</label><select autocomplete="off" id="newTemplate">
-                                <option value="">（選ばない：下の教科・単元から選ぶ）</option>
-                            </select></div>
                         <div><label for="newSubject">教科</label><select autocomplete="off" id="newSubject" required>
                                 <option value="">教科を選択</option>
                             </select></div>
@@ -826,6 +823,7 @@
         let activeClass = null;
         let questions = [];
         let answers = [];
+        let userAnswers = [];
         let sharedChoicePool = [];
         let selectedChoiceNumbers = [];
         let questionIndex = 0;
@@ -855,7 +853,7 @@
                     (set.questions || []).forEach((item) => out.push({
                         c: item.c || set.unit || set.subject || '', setId: doc.id, setTitle: set.setTitle, subject: set.subject || '',
                         unit: set.unit || '', targets: set.targets || [], type: set.type, q: item.q, a: item.a,
-                        k: item.k || 0, e: item.e || '', releaseAt: set.releaseAt || '', createdBy: set.createdBy || '', remote: true,
+                        k: item.k || 0, releaseAt: set.releaseAt || '', createdBy: set.createdBy || '', remote: true,
                     }));
                 });
                 return out;
@@ -876,7 +874,7 @@
                     const t = doc.data();
                     templateList.push({ id: doc.id, title: t.setTitle || '', subject: t.subject || '', unit: t.unit || '', count: (t.questions || []).length });
                     (t.questions || []).forEach((item) => window.questionBank.push({
-                        c: item.c || t.unit || t.subject || '', q: item.q, a: item.a, k: item.k || 0, e: item.e || '',
+                        c: item.c || t.unit || t.subject || '', q: item.q, a: item.a, k: item.k || 0,
                         subject: t.subject || '未設定', unit: t.unit || item.c || '', template: t.setTitle || '',
                     }));
                 });
@@ -1087,7 +1085,6 @@
             showTeacherMenu();
             $('signedInTeacher').textContent = whoLabel() || '教員';
             populateTargetDepartmentList();
-            populateTemplateOptions();
             populateSubjectOptions();
             populateUnitList();
             populateSourceQuestionList();
@@ -1178,6 +1175,7 @@
             questionMode = selectedQuestionSet.type === 'fill' ? 'fill' : selectedQuestionSet.type === 'individual' ? 'single' : 'listChoice';
             questions = [...availableQuestions];
             answers = [];
+            userAnswers = [];
             questionIndex = 0;
             $('profile').classList.add('hidden');
             $('quiz').classList.remove('hidden');
@@ -1210,7 +1208,7 @@
             $('quizMessage').textContent = '';
             $('choices').innerHTML = options.map((option, index) => `
                 <label class="choice">
-                    <input type="radio" name="singleAnswer" value="${option.isCorrect ? '1' : '0'}" autocomplete="off">
+                    <input type="radio" name="singleAnswer" value="${option.isCorrect ? '1' : '0'}" data-text="${escapeHtml(option.text)}" autocomplete="off">
                     ${String.fromCharCode(65 + index)}. ${escapeHtml(option.text)}
                 </label>
             `).join('');
@@ -1224,6 +1222,7 @@
                 return;
             }
             answers.push(selected.value === '1');
+            userAnswers.push(selected.dataset.text);
             questionIndex += 1;
             if (questionIndex < questions.length) drawSingleQuestion();
             else finishQuiz();
@@ -1281,9 +1280,9 @@
                     .filter((index) => !usedByOthers.has(index));
                 picker.querySelector('.number-picker-toggle').textContent = ownChoice === null
                     ? '番号を選択'
-                    : `選択中：${ownChoice + 1}`;
+                    : `選択中：${ownChoice + 1}. ${sharedChoicePool[ownChoice]}`;
                 picker.querySelector('.number-picker-options').innerHTML = options.map((index) => `
-                    <button class="number-picker-option ${ownChoice === index ? 'is-selected' : ''}" type="button" data-choice-index="${index}" aria-pressed="${ownChoice === index}">${index + 1}</button>
+                    <button class="number-picker-option ${ownChoice === index ? 'is-selected' : ''}" type="button" data-choice-index="${index}" aria-pressed="${ownChoice === index}">${index + 1}. ${escapeHtml(sharedChoicePool[index])}</button>
                 `).join('');
             });
         }
@@ -1320,14 +1319,14 @@
                     $('batchMessage').textContent = 'すべての問題に回答を入力してください。';
                     return;
                 }
-                answers = inputs.map((input, index) => (
-                    normalizeAnswer(input.value) === normalizeAnswer(questions[index].a[questions[index].k])
-                ));
+                userAnswers = inputs.map((input) => input.value.trim());
+                answers = inputs.map((input, index) => isFillCorrect(input.value, questions[index].a[questions[index].k]));
             } else {
                 if (selectedChoiceNumbers.some((index) => index === null || index < 0)) {
                     $('batchMessage').textContent = 'すべての問題で、選択肢番号を選んでください。';
                     return;
                 }
+                userAnswers = selectedChoiceNumbers.map((selectedIndex) => sharedChoicePool[selectedIndex]);
                 answers = selectedChoiceNumbers.map((selectedIndex, index) => (
                     normalizeAnswer(sharedChoicePool[selectedIndex]) === normalizeAnswer(questions[index].a[questions[index].k])
                 ));
@@ -1336,7 +1335,18 @@
         };
 
         function normalizeAnswer(value) {
-            return value.trim().toLocaleLowerCase().replace(/[\s　]/g, '');
+            return String(value).normalize('NFKC').trim().toLocaleLowerCase().replace(/\s/g, '');
+        }
+
+        // 正解に（ ）がある場合は、全体・かっこの外・かっこの中のどれでも正解にする
+        function isFillCorrect(input, correct) {
+            const given = normalizeAnswer(input);
+            const full = normalizeAnswer(correct);
+            if (given === full) return true;
+            if (!/\(.*\)/.test(full)) return false;
+            const inside = [...full.matchAll(/\(([^()]*)\)/g)].map((m) => m[1]);
+            const outside = full.replace(/\([^()]*\)/g, '');
+            return [outside, ...inside].some((v) => v && v === given);
         }
 
         function finishQuiz() {
@@ -1347,7 +1357,8 @@
             $('feedback').innerHTML = questions.map((question, index) => `
                 <div class="feedback ${answers[index] ? 'good' : 'bad'}">
                     <b>${index + 1}. ${answers[index] ? '正解' : '不正解'}：${escapeHtml(question.c)}</b>
-                    ${answers[index] ? '' : `<div>正解：${escapeHtml(question.a[question.k])}</div>${question.e ? `<div class="muted">解説：${escapeHtml(question.e)}</div>` : ''}`}
+                    <div>あなたの答え：${escapeHtml(userAnswers[index] || '')}</div>
+                    <div>正解：${escapeHtml(question.a[question.k])}</div>
                 </div>
             `).join('');
 
@@ -1423,11 +1434,6 @@
             return targets.map((target) => `${target.grade} ${target.departments.join('・')}`).join('、') || '対象未設定';
         }
 
-        function populateTemplateOptions() {
-            $('newTemplate').innerHTML = '<option value="">（選ばない：下の教科・単元から選ぶ）</option>' + templateList.map((t) =>
-                `<option value="${escapeHtml(t.id)}">${escapeHtml(t.title)}（${t.count}問）</option>`).join('');
-        }
-
         function populateSubjectOptions() {
             const subjects = [...new Set(window.questionBank.map((question) => question.subject).filter(Boolean))];
             $('newSubject').innerHTML = '<option value="">教科を選択</option>' + subjects.map((subject) =>
@@ -1460,8 +1466,7 @@
                 .filter(({ question }) => {
                     const subject = question.subject || '情報処理';
                     const unit = question.unit || question.c;
-                    const tpl = $('newTemplate').value ? (templateList.find((t) => t.id === $('newTemplate').value)?.title || '') : '';
-                    return (!tpl || question.template === tpl) && (!selectedSubject || subject === selectedSubject) && (selectedUnit === '__all__' || unit === selectedUnit);
+                    return (!selectedSubject || subject === selectedSubject) && (selectedUnit === '__all__' || unit === selectedUnit);
                 });
         }
 
@@ -1506,24 +1511,17 @@
             populateUnitList();
             populateSourceQuestionList();
         }
-        $('newSubject').addEventListener('change', () => { $('newTemplate').value = ''; updateSourceQuestionsFromSubjectUnit(); });
-        $('newTemplate').addEventListener('change', () => {
-            selectedSourceQuestionIndexes.clear();
-            const t = templateList.find((item) => item.id === $('newTemplate').value);
-            if (t) {
-                $('newSubject').value = t.subject || '';
-                populateUnitList();
-                $('newUnit').value = '__all__';
-                if (!$('newQuestionSet').value.trim()) $('newQuestionSet').value = t.title;
-                getMatchingSourceQuestions().forEach(({ index }) => selectedSourceQuestionIndexes.add(index));
-            }
-            populateSourceQuestionList();
-            if (t) $('authorMessage').textContent = `テンプレート「${t.title}」の問題を、すべて選びました。必要ないものはチェックを外してください。`;
-        });
+        $('newSubject').addEventListener('change', updateSourceQuestionsFromSubjectUnit);
         populateUnitList();
         populateSourceQuestionList();
         $('newUnit').addEventListener('change', () => {
             selectedSourceQuestionIndexes.clear();
+            const unit = $('newUnit').value;
+            if (unit && unit !== '__all__') {
+                getMatchingSourceQuestions().forEach(({ index }) => selectedSourceQuestionIndexes.add(index));
+                if (!$('newQuestionSet').value.trim()) $('newQuestionSet').value = `${$('newSubject').value}：${unit}`;
+                $('authorMessage').textContent = `「${unit}」の問題をすべて選びました。必要ないものはチェックを外してください。`;
+            }
             populateSourceQuestionList();
         });
         $('releaseMode').addEventListener('change', updateReleaseFields);
@@ -1553,10 +1551,17 @@
             const info = $('teacherRecordsInfo');
             info.textContent = '読み込み中…';
             try {
-                const snap = await db.collection('results').orderBy('at', 'desc').limit(2000).get();
+                // 管理者は全員分。先生は、自分の学年・学科の分だけ（Firestoreのルールでも同じ範囲に制限されている）
+                const isAdmin = activeAccount.role === 'admin';
+                const snap = await (isAdmin
+                    ? db.collection('results').orderBy('at', 'desc').limit(3000)
+                    : db.collection('results').where('grade', '==', activeAccount.grade).where('className', '==', activeAccount.className)).get();
                 cloudRecords = [];
                 snap.forEach((doc) => cloudRecords.push(doc.data()));
-                info.textContent = '';
+                cloudRecords.sort((x, y) => String(y.at).localeCompare(String(x.at)));
+                $('recordGradeFilter').parentElement.classList.toggle('hidden', !isAdmin);
+                if (!isAdmin) $('recordGradeFilter').value = '';
+                info.textContent = isAdmin ? '' : `表示範囲：${activeAccount.grade} ${activeAccount.className}`;
             } catch {
                 cloudRecords = [];
                 info.textContent = '記録を読み込めませんでした（Firestoreのルールが更新されているか確認してください）。';
@@ -1697,7 +1702,7 @@
                 questions: selectedIndexes.map((index) => {
                     const source = window.questionBank[index];
                     return {
-                        c: source.c || '', q: source.q, ...(source.e ? { e: source.e } : {}),
+                        c: source.c || '', q: source.q,
                         a: type === 'fill' ? [source.a[source.k]] : [...source.a],
                         k: type === 'fill' ? 0 : source.k,
                     };
@@ -1720,7 +1725,6 @@
             $('authorMessage').textContent = `「${setTitle}」を${scheduleLabel}。`;
             $('newQuestionSet').value = '';
             $('newSubject').value = '';
-            $('newTemplate').value = '';
             populateUnitList();
             document.querySelectorAll('.target-department-checkbox:checked').forEach((checkbox) => {
                 checkbox.checked = false;
