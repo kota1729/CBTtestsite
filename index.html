@@ -668,6 +668,15 @@
             <div class="auth-btns"><button id="savePassword" type="button">変更してはじめる</button><button class="secondary" id="cancelPassword" type="button">スキップ</button></div>
             <p class="muted auth-msg" id="pwChangeMessage" role="status"></p>
         </section>
+        <section class="card hidden" id="appChooser">
+            <h1 class="auth-title">どちらを使いますか？</h1>
+            <p class="auth-sub" id="appChooserWho"></p>
+            <div class="auth-form">
+                <button type="button" id="chooseCbt">CBTテスト（小テスト）</button>
+                <button type="button" id="chooseI1">I1テスト対策（一問一答）</button>
+            </div>
+            <div class="auth-btns"><button class="danger" type="button" id="appChooserLogout">ログアウト</button></div>
+        </section>
         <section class="card hidden" id="roleChooser">
             <h1 class="auth-title">どの画面を開きますか？</h1>
             <p class="auth-sub" id="roleChooserWho"></p>
@@ -677,14 +686,14 @@
                 <button type="button" id="chooseAdmin">管理画面（生徒の登録・パスワード・問題テンプレート）</button>
             </div>
             <p class="muted auth-msg" id="chooserMessage" role="status"></p>
-            <div class="auth-btns"><button class="danger" type="button" id="chooserLogout">ログアウト</button></div>
+            <div class="auth-btns"><button class="secondary" type="button" data-to-apps>サイトの選択へ戻る</button><button class="danger" type="button" id="chooserLogout">ログアウト</button></div>
         </section>
         <section class="card hidden" id="profile">
             <h2 class="section-title">小テスト</h2>
             <p id="signedInStudent" class="muted">ログイン中</p>
             <h3>実施できる問題セット</h3>
             <div id="questionSetList" class="question-set-list" aria-label="実施できる問題セット"></div>
-            <div class="actions"><button class="secondary" id="showTeacher">結果一覧</button><button class="secondary hidden admin-only"
+            <div class="actions"><button class="secondary" id="showTeacher">結果一覧</button><button class="secondary" type="button" data-to-apps>サイトの選択へ戻る</button><button class="secondary hidden admin-only"
                     type="button" data-to-chooser>画面の選択へ戻る</button><button class="danger"
                     id="logoutButton">ログアウト</button></div>
         </section>
@@ -701,7 +710,7 @@
                 <button class="question-set-card" type="button" data-teacher-view="current"><span
                         class="question-set-title">現在作っている問題</span><span class="question-set-action">問題セット一覧を開く
                         →</span></button>
-                <div class="actions"><button class="secondary hidden admin-only" type="button" data-to-chooser>画面の選択へ戻る</button><button class="danger" type="button" id="teacherMenuLogout">ログアウト</button></div>
+                <div class="actions"><button class="secondary hidden admin-only" type="button" data-to-chooser>画面の選択へ戻る</button><button class="secondary" type="button" data-to-apps>サイトの選択へ戻る</button><button class="danger" type="button" id="teacherMenuLogout">ログアウト</button></div>
             </div>
             <section class="hidden" id="teacherCreatePanel">
                 <div class="actions"><button class="secondary" type="button" data-teacher-menu>先生メニューへ戻る</button></div>
@@ -970,9 +979,10 @@
             return remoteQuestions;
         }
 
+        if (location.hash === '#menu') history.replaceState(null, '', location.pathname + location.search);   // I1からの戻りリンク
         function hideViews() {
             document.body.classList.remove('auth-mode');
-            ['loginPanel', 'passwordChangePanel', 'roleChooser', 'profile', 'quiz', 'result', 'teacher', 'teacherDashboard'].forEach((id) => {
+            ['loginPanel', 'passwordChangePanel', 'appChooser', 'roleChooser', 'profile', 'quiz', 'result', 'teacher', 'teacherDashboard'].forEach((id) => {
                 $(id).classList.add('hidden');
             });
         }
@@ -1017,7 +1027,7 @@
             // 保存設定はログイン情報そのものではなく、保存方法だけをlocalStorageに保持する。
             // ページ更新のたびにNONEへ戻すと、2回目以降のF5でFirebaseの認証状態が消えるため、ここでは上書きしない。
             const pref = localStorage.getItem('cbt_login_persistence');
-            persistenceReady = auth.setPersistence(pref === 'local' ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.NONE).catch(() => {});
+            persistenceReady = auth.setPersistence(pref === 'local' ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION).catch(() => {});
         }
 
         function loadSchoolConfig() {
@@ -1156,10 +1166,10 @@
             };
             if (options.askSave && !restoringLogin && !loginPromptShown) {
                 loginPromptShown = true;
-                const save = await showConfirm('次回からこの端末で自動的にログインした状態にしますか？\n\n「保存する」を選ぶと、F5で更新してもログイン画面には戻りません。', 'ログイン情報の保存', { cancelText: '保存しない', okText: '保存する' });
+                const save = await showConfirm('次回からこの端末で自動的にログインした状態にしますか？\n\n「保存する」を選ぶと、ブラウザを閉じたあともログインしたままになります。「保存しない」の場合は、このタブを閉じるまでです。', 'ログイン情報の保存', { cancelText: '保存しない', okText: '保存する' });
                 try {
                     localStorage.setItem('cbt_login_persistence', save ? 'local' : 'none');
-                    await auth.setPersistence(save ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.NONE);
+                    await auth.setPersistence(save ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION);
                 } catch (e) {
                     if (save) {
                         localStorage.setItem('cbt_login_persistence', 'none');
@@ -1173,9 +1183,7 @@
                 remoteQuestions = await loadRemoteQuestions();
                 $('passwordInput').value = '';
                 document.querySelectorAll('.admin-only').forEach((el) => el.classList.toggle('hidden', profile.role !== 'admin'));
-                if (profile.role === 'admin') showRoleChooser();
-                else if (profile.role === 'teacher') await enterTeacher();
-                else enterStudent();
+                showAppChooser();
             } finally {
                 hideLoading();
             }
@@ -1189,7 +1197,7 @@
                 const snap = await db.collection('users').doc(user.uid).get();
                 if (!snap.exists || snap.data().mustChange) {
                     localStorage.setItem('cbt_login_persistence', 'none');
-                    await auth.setPersistence(firebase.auth.Auth.Persistence.NONE).catch(() => {});
+                    await auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {});
                     await auth.signOut().catch(() => {});
                     return;
                 }
@@ -1215,6 +1223,24 @@
             return [activeAccount.grade, activeAccount.className,
                 activeAccount.name ? `${activeAccount.name}先生` : ''].filter(Boolean).join(' ');
         }
+
+        // ログイン後、CBTテストとI1テスト対策のどちらを使うか選ぶ
+        function showAppChooser() {
+            hideViews();
+            document.body.classList.add('auth-mode');
+            viewMode = '';
+            $('appChooser').classList.remove('hidden');
+            $('appChooserWho').textContent = nameLabel(activeAccount);
+        }
+
+        async function enterCbt() {
+            if (activeAccount.role === 'admin') showRoleChooser();
+            else if (activeAccount.role === 'teacher') await enterTeacher();
+            else enterStudent();
+        }
+        $('chooseCbt').onclick = () => { $('chooseCbt').disabled = true; enterCbt().finally(() => { $('chooseCbt').disabled = false; }); };
+        $('chooseI1').onclick = () => { location.href = './i1/'; };
+        $('appChooserLogout').onclick = showLogin;
 
         function showRoleChooser() {
             hideViews();
@@ -1259,6 +1285,7 @@
         $('chooserLogout').onclick = showLogin;
         document.addEventListener('click', (event) => {
             if (event.target.closest('[data-to-chooser]')) showRoleChooser();
+            if (event.target.closest('[data-to-apps]')) showAppChooser();
         });
 
         function studentProfile() {
