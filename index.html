@@ -709,7 +709,7 @@
                     <div class="actions" style="align-items:end; margin:8px 0">
                         <label for="randomQuestionCount">ランダムに選ぶ問題数</label>
                         <input id="randomQuestionCount" type="number" min="1" value="5" style="max-width:100px" autocomplete="off">
-                        <button id="randomSelectQuestions" type="button" class="secondary">指定の問題数ランダム選択</button>
+                        <button id="randomSelectQuestions" type="button" class="secondary">条件に合う問題からランダム選択</button>
                         <button id="selectAllQuestions" type="button" class="secondary">すべての問題を選択</button>
                         <button id="clearAllQuestions" type="button" class="secondary">選択をすべて外す</button>
                     </div>
@@ -837,7 +837,12 @@
         let viewMode = '';
 
         function shuffle(items) {
-            return [...items].sort(() => Math.random() - 0.5);
+            const a = [...items];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
         }
 
         function historyKey() {
@@ -1176,7 +1181,7 @@
             }
 
             questionMode = selectedQuestionSet.type === 'fill' ? 'fill' : selectedQuestionSet.type === 'individual' ? 'single' : 'listChoice';
-            questions = [...availableQuestions];
+            questions = shuffle(availableQuestions);   // 毎回ランダムな順番で出題
             answers = [];
             userAnswers = [];
             questionIndex = 0;
@@ -1389,6 +1394,11 @@
                 subject: selectedQuestionSet?.subject || '', unit: selectedQuestionSet?.unit || '',
                 mode: questionMode, score: correctCount, total: questions.length,
                 at: new Date().toISOString(),
+                // 出題された順番ごとの、問題・本人の答え・正解・正誤
+                details: questions.map((question, index) => ({
+                    n: index + 1, c: question.c || '', q: question.q,
+                    you: String(userAnswers[index] ?? ''), ans: String(question.a[question.k]), ok: !!answers[index],
+                })),
             };
             if (!db || !rec.uid) { status.textContent = '記録を先生に送れませんでした（ログイン状態を確認してください）。'; return; }
             db.collection('results').add(rec)
@@ -1594,8 +1604,8 @@
             const records = filteredRecords();
             const fmt = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : d.toLocaleString('ja-JP'); };
             $('teacherRecords').innerHTML = records.length
-                ? records.map((record) => `
-                    <tr>
+                ? records.map((record, i) => `
+                    <tr class="record-row" data-rec="${i}" tabindex="0" style="cursor:pointer" title="タップすると詳細が開きます">
                         <td>${escapeHtml(fmt(record.at))}</td>
                         <td>${escapeHtml(record.grade)} ${escapeHtml(record.className)}</td>
                         <td>${escapeHtml(Number(record.attendanceNumber) || record.attendanceNumber)}</td>
@@ -1626,6 +1636,30 @@
                 await renderTeacherRecords().catch(() => {});
             }
             $('deleteAllRecords').disabled = false;
+        });
+        const modeLabel = { fill: '入力式', single: '1問ずつ（各問4択）', listChoice: '共通選択肢式' };
+        function toggleRecordDetail(row) {
+            const next = row.nextElementSibling;
+            if (next && next.classList.contains('record-detail')) { next.remove(); return; }
+            const r = filteredRecords()[Number(row.dataset.rec)];
+            if (!r) return;
+            const d = Array.isArray(r.details) ? r.details : null;
+            const body = d
+                ? d.map((x) => `<div class="feedback ${x.ok ? 'good' : 'bad'}"><b>${escapeHtml(x.n)}. ${x.ok ? '正解' : '不正解'}</b>：${escapeHtml(x.q)}<div>生徒の答え：${escapeHtml(x.you)}</div><div>正解：${escapeHtml(x.ans)}</div></div>`).join('')
+                : '<p class="muted">この記録には詳細がありません（古い記録です）。</p>';
+            const wrong = d ? d.filter((x) => !x.ok).map((x) => x.n) : [];
+            row.insertAdjacentHTML('afterend', `<tr class="record-detail"><td colspan="6">
+                <p><b>${escapeHtml(r.setTitle || '—')}</b> ／ 形式：${escapeHtml(modeLabel[r.mode] || r.mode || '')} ／ ${r.score}/${r.total}</p>
+                ${d ? `<p>間違えた問題（出題順）：${wrong.length ? wrong.map((n) => n + '問目').join('、') : 'なし'}</p>` : ''}
+                ${body}</td></tr>`);
+        }
+        $('teacherRecords').addEventListener('click', (event) => {
+            const row = event.target.closest('.record-row');
+            if (row) toggleRecordDetail(row);
+        });
+        $('teacherRecords').addEventListener('keydown', (event) => {
+            const row = event.target.closest('.record-row');
+            if (row && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); toggleRecordDetail(row); }
         });
         $('recordSetFilter').addEventListener('change', drawTeacherRecords);
         $('recordGradeFilter').addEventListener('change', drawTeacherRecords);
