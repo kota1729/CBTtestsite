@@ -1,6 +1,11 @@
-node_modules/
-accounts.csv
-secret/
-*serviceAccount*.json
-*-firebase-adminsdk-*.json
+# Firebase設定
+firebase-config.js
+
+# Firestoreルール
 firestore.rules
+
+# README
+README.md
+
+# macOS
+.DS_Store
