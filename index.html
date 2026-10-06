@@ -338,29 +338,36 @@
             justify-content: flex-end;
         }
 
-        .auth-dialog {
+        .app-dialog {
             position: fixed;
             inset: 0;
-            z-index: 3000;
+            z-index: 2000;
             display: grid;
             place-items: center;
             padding: 20px;
-            background: rgba(16, 35, 56, .58);
-            backdrop-filter: blur(2px);
+            background: #102338aa;
         }
-        .auth-dialog.hidden { display: none !important; }
-        .auth-dialog-card {
+        .app-dialog-card {
             width: min(100%, 460px);
-            padding: 25px;
+            padding: 24px;
             border-radius: 16px;
             background: #fff;
-            box-shadow: 0 20px 70px rgba(16,35,56,.28);
-            border: 1px solid var(--line);
+            box-shadow: 0 18px 60px #10233855;
+            animation: appDialogIn .16s ease-out;
         }
-        .auth-dialog-card h2 { margin: 0 0 10px; color: var(--navy); font-size: 21px; }
-        .auth-dialog-card p { margin: 0; color: var(--muted); white-space: pre-line; }
-        .auth-dialog-card .actions { justify-content: flex-end; margin-top: 20px; }
-        .auth-dialog-card .actions button { min-width: 120px; }
+        .app-dialog-card h2 { margin: 0 0 10px; color: var(--navy); }
+        .app-dialog-card p { margin: 0; color: var(--muted); line-height: 1.7; white-space: pre-wrap; }
+        .app-dialog-card .actions { justify-content: flex-end; margin-top: 20px; }
+        .loading-overlay {
+            position: fixed; inset: 0; z-index: 1900; display: grid; place-items: center;
+            background: #10233844; backdrop-filter: blur(2px);
+        }
+        .loading-card { padding: 22px 28px; border-radius: 16px; background: #fff; box-shadow: 0 18px 60px #10233844; text-align: center; }
+        .loading-spinner { width: 34px; height: 34px; margin: 0 auto 12px; border: 4px solid #d9e1ea; border-top-color: var(--blue); border-radius: 50%; animation: loadingSpin .8s linear infinite; }
+        .loading-text { color: var(--muted); font-size: 14px; }
+        .loading-inline { display:inline-flex; align-items:center; gap:8px; }
+        @keyframes loadingSpin { to { transform: rotate(360deg); } }
+        @keyframes appDialogIn { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
 
         .password-login-field {
             grid-column: 1 / -1;
@@ -658,7 +665,7 @@
                     <button class="toggle-pw-btn" type="button" data-target="newPasswordConfirm" aria-pressed="false">表示</button>
                 </div>
             </div>
-            <div class="auth-btns"><button id="savePassword" type="button">変更してはじめる</button><button class="secondary" id="skipPassword" type="button">スキップ</button></div>
+            <div class="auth-btns"><button id="savePassword" type="button">変更してはじめる</button><button class="secondary" id="cancelPassword" type="button">スキップ</button></div>
             <p class="muted auth-msg" id="pwChangeMessage" role="status"></p>
         </section>
         <section class="card hidden" id="roleChooser">
@@ -769,11 +776,6 @@
                     </table>
                 </div>
             </section>
-            <section class="card hidden" id="teacherRecordDetailPanel">
-                <div class="actions"><button class="secondary" type="button" id="backToTeacherRecords">生徒の記録一覧へ戻る</button></div>
-                <h3>生徒の記録詳細</h3>
-                <div id="teacherRecordDetail"></div>
-            </section>
             <section class="card hidden" id="teacherCurrentQuestionsPanel">
                 <div class="actions"><button class="secondary" type="button" data-teacher-menu>先生メニューへ戻る</button></div>
                 <h3>公開している問題セット <span class="muted" id="teacherQuestionCount"></span></h3>
@@ -785,7 +787,7 @@
                 <div class="qhead"><span id="progress">問題 1 / 10</span><span class="pill" id="category"></span></div>
                 <div class="question" id="prompt"></div>
                 <div class="choices" id="choices"></div>
-                <div class="actions"><button class="secondary" id="previousQuestion" type="button">前の問題</button><button id="next">回答する</button><button class="secondary" id="quit">中断</button>
+                <div class="actions"><button id="next">回答する</button><button class="secondary" id="quit">中断</button>
                 </div>
                 <p class="muted" id="quizMessage"></p>
             </div>
@@ -828,6 +830,19 @@
                 </table>
             </div>
         </section>
+        <div id="appDialog" class="app-dialog hidden" role="presentation">
+            <section class="app-dialog-card" role="dialog" aria-modal="true" aria-labelledby="appDialogTitle" aria-describedby="appDialogMessage">
+                <h2 id="appDialogTitle">確認</h2>
+                <p id="appDialogMessage"></p>
+                <div class="actions">
+                    <button class="secondary hidden" id="appDialogCancel" type="button">キャンセル</button>
+                    <button id="appDialogOk" type="button">OK</button>
+                </div>
+            </section>
+        </div>
+        <div id="loadingOverlay" class="loading-overlay hidden" role="status" aria-live="polite">
+            <div class="loading-card"><div class="loading-spinner"></div><div class="loading-text" id="loadingText">読み込み中…</div></div>
+        </div>
         <div id="quitDialog" class="quit-dialog hidden" role="presentation">
             <section class="quit-dialog-card" role="dialog" aria-modal="true" aria-labelledby="quitDialogTitle"
                 aria-describedby="quitDialogMessage">
@@ -836,17 +851,6 @@
                 <div class="actions">
                     <button class="secondary" id="cancelQuit" type="button">テストを続ける</button>
                     <button class="danger" id="confirmQuit" type="button">中断してマイページへ</button>
-                </div>
-            </section>
-        </div>
-        <div id="authDialog" class="auth-dialog hidden" role="presentation">
-            <section class="auth-dialog-card" role="dialog" aria-modal="true" aria-labelledby="authDialogTitle"
-                aria-describedby="authDialogMessage">
-                <h2 id="authDialogTitle">確認</h2>
-                <p id="authDialogMessage"></p>
-                <div class="actions">
-                    <button class="secondary" id="authDialogCancel" type="button">キャンセル</button>
-                    <button id="authDialogOk" type="button">OK</button>
                 </div>
             </section>
         </div>
@@ -875,9 +879,36 @@
         let availableQuestionSets = [];
         let selectedQuestionSet = null;
         let viewMode = '';
-        let unsubscribeQuestionSets = null;
-        let unsubscribeTemplates = null;
-        let unsubscribeResults = null;
+        let restoringLogin = false;
+        let loginPromptShown = false;
+        let signingIn = false;
+
+        function showAppDialog(title, message, options = {}) {
+            return new Promise((resolve) => {
+                const modal = $('appDialog');
+                const cancel = $('appDialogCancel');
+                const ok = $('appDialogOk');
+                $('appDialogTitle').textContent = title || '確認';
+                $('appDialogMessage').textContent = message || '';
+                cancel.classList.toggle('hidden', !options.cancel);
+                cancel.textContent = options.cancelText || 'キャンセル';
+                ok.textContent = options.okText || 'OK';
+                const finish = (value) => {
+                    modal.classList.add('hidden');
+                    ok.onclick = null; cancel.onclick = null;
+                    resolve(value);
+                };
+                ok.onclick = () => finish(true);
+                cancel.onclick = () => finish(false);
+                modal.classList.remove('hidden');
+                ok.focus();
+            });
+        }
+        const showAlert = (message, title = 'お知らせ') => showAppDialog(title, message);
+        const showConfirm = (message, title = '確認', options = {}) => showAppDialog(title, message, { cancel: true, cancelText: options.cancelText || 'キャンセル', okText: options.okText || 'OK' });
+        function showLoading(message = '読み込み中…') { $('loadingText').textContent = message; $('loadingOverlay').classList.remove('hidden'); }
+        function hideLoading() { $('loadingOverlay').classList.add('hidden'); }
+        function setInlineLoading(el, message = '読み込み中…') { el.innerHTML = `<span class="loading-inline"><span class="loading-spinner"></span><span>${escapeHtml(message)}</span></span>`; }
 
         function shuffle(items) {
             const a = [...items];
@@ -935,74 +966,6 @@
             }
         }
 
-        function applyQuestionSetsSnapshot(snap) {
-            const out = [];
-            snap.forEach((doc) => {
-                const set = doc.data();
-                (set.questions || []).forEach((item) => out.push({
-                    c: item.c || set.unit || set.subject || '', setId: doc.id, setTitle: set.setTitle, subject: set.subject || '',
-                    unit: set.unit || '', targets: set.targets || [], type: set.type, q: item.q, a: item.a,
-                    k: item.k || 0, releaseAt: set.releaseAt || '', createdBy: set.createdBy || '', remote: true,
-                }));
-            });
-            remoteQuestions = out;
-            if (viewMode === 'student' && !$('profile').classList.contains('hidden')) populateStudentQuestionSets();
-            if (viewMode === 'teacher') {
-                populateSourceQuestionList();
-                renderTeacherQuestions();
-            }
-        }
-
-        function startRealtimeUpdates() {
-            if (!db) return;
-            if (unsubscribeQuestionSets) unsubscribeQuestionSets();
-            unsubscribeQuestionSets = db.collection('questionSets').onSnapshot(
-                (snap) => applyQuestionSetsSnapshot(snap),
-                () => { /* 一時的な通信エラー時は現在の内容を維持 */ }
-            );
-            if (activeAccount && activeAccount.role === 'teacher') {
-                if (unsubscribeTemplates) unsubscribeTemplates();
-                unsubscribeTemplates = db.collection('templates').onSnapshot(
-                    (snap) => {
-                        templateList = []; window.questionBank = [];
-                        snap.forEach((doc) => {
-                            const t = doc.data();
-                            templateList.push({ id: doc.id, title: t.setTitle || '', subject: t.subject || '', unit: t.unit || '', count: (t.questions || []).length });
-                            (t.questions || []).forEach((item) => window.questionBank.push({
-                                c: item.c || t.unit || t.subject || '', q: item.q, a: item.a, k: item.k || 0,
-                                subject: t.subject || '未設定', unit: t.unit || item.c || '', template: t.setTitle || '',
-                            }));
-                        });
-                        templateList.sort((x, y) => x.subject.localeCompare(y.subject, 'ja') || x.title.localeCompare(y.title, 'ja'));
-                        populateSubjectOptions();
-                        populateUnitList();
-                        populateSourceQuestionList();
-                    },
-                    () => { /* 権限・通信エラー時は現在の内容を維持 */ }
-                );
-            }
-            if (unsubscribeResults) unsubscribeResults();
-            const resultQuery = activeAccount?.role === 'admin'
-                ? db.collection('results').orderBy('at', 'desc').limit(3000)
-                : activeAccount?.role === 'teacher'
-                    ? db.collection('results').where('grade', '==', activeAccount.grade).where('className', '==', activeAccount.className)
-                    : null;
-            if (resultQuery) {
-                unsubscribeResults = resultQuery.onSnapshot((snap) => {
-                    cloudRecords = [];
-                    snap.forEach((doc) => cloudRecords.push({ ...doc.data(), _id: doc.id }));
-                    cloudRecords.sort((x, y) => String(y.at).localeCompare(String(x.at)));
-                    if (viewMode === 'teacher' && !$('teacherRecordsPanel').classList.contains('hidden')) {
-                        const current = $('recordSetFilter').value;
-                        const titles = [...new Set(cloudRecords.map((r) => r.setTitle).filter(Boolean))].sort((x, y) => x.localeCompare(y, 'ja'));
-                        $('recordSetFilter').innerHTML = '<option value="">すべて</option>' + titles.map((t) => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
-                        $('recordSetFilter').value = titles.includes(current) ? current : '';
-                        drawTeacherRecords();
-                    }
-                }, () => { /* 一時的な通信エラー時は現在の内容を維持 */ });
-            }
-        }
-
         function getCustomQuestions() {
             return remoteQuestions;
         }
@@ -1015,9 +978,6 @@
         }
 
         function showLogin() {
-            if (unsubscribeQuestionSets) { unsubscribeQuestionSets(); unsubscribeQuestionSets = null; }
-            if (unsubscribeTemplates) { unsubscribeTemplates(); unsubscribeTemplates = null; }
-            if (unsubscribeResults) { unsubscribeResults(); unsubscribeResults = null; }
             hideViews();
             document.body.classList.add('auth-mode');
             $('loginPanel').classList.remove('hidden');
@@ -1042,47 +1002,6 @@
         let auth = null;
         let db = null;
         let pendingMatch = null;
-        const SAVED_LOGIN_KEY = 'cbtSavedLoginInfo';
-        let authDialogResolver = null;
-
-        function showAuthDialog({ title = '確認', message = '', okText = 'OK', cancelText = 'キャンセル', danger = false }) {
-            $('authDialogTitle').textContent = title;
-            $('authDialogMessage').textContent = message;
-            $('authDialogOk').textContent = okText;
-            $('authDialogCancel').textContent = cancelText;
-            $('authDialogOk').classList.toggle('danger', !!danger);
-            $('authDialog').classList.remove('hidden');
-            setTimeout(() => $('authDialogOk').focus(), 0);
-            return new Promise((resolve) => { authDialogResolver = resolve; });
-        }
-        function closeAuthDialog(result) {
-            $('authDialog').classList.add('hidden');
-            if (authDialogResolver) { const resolve = authDialogResolver; authDialogResolver = null; resolve(result); }
-        }
-        $('authDialogOk').onclick = () => closeAuthDialog(true);
-        $('authDialogCancel').onclick = () => closeAuthDialog(false);
-        $('authDialog').addEventListener('click', (event) => { if (event.target === $('authDialog')) closeAuthDialog(false); });
-        function loadSavedLoginInfo() {
-            try {
-                const saved = JSON.parse(localStorage.getItem(SAVED_LOGIN_KEY) || 'null');
-                if (!saved || !saved.userId || !saved.password) return;
-                $('userIdInput').value = saved.userId;
-                $('passwordInput').value = saved.password;
-            } catch (_) { localStorage.removeItem(SAVED_LOGIN_KEY); }
-        }
-        async function askSaveLoginInfo(userId, password) {
-            const save = await showAuthDialog({
-                title: 'ログイン情報を保存しますか？',
-                message: 'このブラウザにユーザーIDとパスワードを保存できます。次回から入力の手間を省けます。\n\n共有のパソコンでは「保存しない」を選んでください。',
-                okText: '保存する',
-                cancelText: '保存しない'
-            });
-            if (save) {
-                localStorage.setItem(SAVED_LOGIN_KEY, JSON.stringify({ userId, password }));
-            } else {
-                localStorage.removeItem(SAVED_LOGIN_KEY);
-            }
-        }
 
         function initFirebase() {
             const cfg = window.FIREBASE_CONFIG;
@@ -1094,7 +1013,7 @@
             firebase.initializeApp(cfg);
             auth = firebase.auth();
             db = firebase.firestore();
-            auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {});
+            auth.setPersistence(firebase.auth.Auth.Persistence.NONE).catch(() => {});
         }
 
         function loadSchoolConfig() {
@@ -1146,6 +1065,7 @@
                 return;
             }
             $('loginButton').disabled = true;
+            signingIn = true;
             try {
                 const { user } = await auth.signInWithEmailAndPassword(toEmail(userId), password);
                 const snap = await db.collection('users').doc(user.uid).get();
@@ -1167,10 +1087,11 @@
                     $('newPassword').focus();
                     return;
                 }
-                await completeLogin(profile, config, { userId, password });
+                await completeLogin(profile, config, { askSave: true });
             } catch (error) {
                 $('loginMessage').textContent = loginErrorMessage(error);
             } finally {
+                signingIn = false;
                 $('loginButton').disabled = false;
             }
         };
@@ -1193,39 +1114,33 @@
             } finally {
                 $('savePassword').disabled = false;
             }
-            const loginInfo = { userId: m.profile.userId, password: a };
             pendingMatch = null;
             $('newPassword').value = '';
             $('newPasswordConfirm').value = '';
             msg.textContent = '';
-            await completeLogin(m.profile, m.config, loginInfo);
+            await completeLogin(m.profile, m.config, { askSave: true });
         };
-        $('skipPassword').onclick = async () => {
+        $('cancelPassword').onclick = async () => {
             const m = pendingMatch;
             if (!m) return;
-            const proceed = await showAuthDialog({
-                title: '初期パスワードのまま利用しますか？',
-                message: 'パスワードを変更せずにスキップすると、初期パスワードのまま利用することになります。\n\n初期パスワードは他の人に知られないようにしてください。\n\nこのまま初期パスワードで利用しますか？',
-                okText: '初期パスワードで続ける',
-                cancelText: 'パスワードを変更する'
-            });
-            if (proceed) {
-                const profile = m.profile, config = m.config;
-                try { await db.collection('users').doc(m.user.uid).update({ mustChange: false }); } catch {
-                    $('pwChangeMessage').textContent = 'ログインを続行できませんでした。通信を確認してもう一度試してください。';
-                    return;
-                }
-                const loginInfo = { userId: m.profile.userId, password: m.password };
+            const ok = await showConfirm(
+                '初期パスワードのまま使用すると、他の人にパスワードを知られた場合にアカウントを使われる可能性があります。\n\nそれでも初期パスワードのまま続けますか？',
+                'パスワード設定をスキップ'
+            );
+            if (!ok) { $('newPassword').focus(); return; }
+            try {
+                await db.collection('users').doc(m.user.uid).update({ mustChange: false });
                 pendingMatch = null;
-                $('newPassword').value = ''; $('newPasswordConfirm').value = ''; $('pwChangeMessage').textContent = '';
-                await completeLogin(profile, config, loginInfo);
-            } else {
-                $('pwChangeMessage').textContent = 'パスワードの変更を続けてください。';
-                $('newPassword').focus();
+                $('newPassword').value = '';
+                $('newPasswordConfirm').value = '';
+                $('pwChangeMessage').textContent = '';
+                await completeLogin(m.profile, m.config, { askSave: true });
+            } catch (e) {
+                await showAlert('初回設定の完了に失敗しました。もう一度お試しください。', 'ログインできません');
             }
         };
 
-        async function completeLogin(profile, config, loginInfo = null) {
+        async function completeLogin(profile, config, options = {}) {
             activeSchool = (window.SCHOOL_LIST || [])[0] || { id: 'main' };
             activeSchoolConfig = config;
             activeClass = null;
@@ -1234,15 +1149,49 @@
                 attendanceNumber: profile.attendanceNumber || '',
                 grade: profile.grade || '', className: profile.className || '',
             };
-            remoteQuestions = await loadRemoteQuestions();
-            startRealtimeUpdates();
-            $('passwordInput').value = '';
-            document.querySelectorAll('.admin-only').forEach((el) => el.classList.toggle('hidden', profile.role !== 'admin'));
-            if (profile.role === 'admin') showRoleChooser();
-            else if (profile.role === 'teacher') await enterTeacher();
-            else enterStudent();
-            if (loginInfo && loginInfo.userId && loginInfo.password) {
-                await askSaveLoginInfo(loginInfo.userId, loginInfo.password);
+            if (options.askSave && !restoringLogin && !loginPromptShown) {
+                loginPromptShown = true;
+                const save = await showConfirm('次回からこの端末で自動的にログインした状態にしますか？\n\n「保存する」を選ぶと、F5で更新してもログイン画面には戻りません。', 'ログイン情報の保存', { cancelText: '保存しない', okText: '保存する' });
+                try {
+                    await auth.setPersistence(save ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.NONE);
+                } catch (e) {
+                    if (save) await showAlert('ログイン情報の保存に失敗しました。次回のページ更新時には再ログインが必要になる場合があります。', '保存できませんでした');
+                }
+                loginPromptShown = false;
+            }
+            showLoading('ログイン情報を読み込んでいます…');
+            try {
+                remoteQuestions = await loadRemoteQuestions();
+                $('passwordInput').value = '';
+                document.querySelectorAll('.admin-only').forEach((el) => el.classList.toggle('hidden', profile.role !== 'admin'));
+                if (profile.role === 'admin') showRoleChooser();
+                else if (profile.role === 'teacher') await enterTeacher();
+                else enterStudent();
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function restoreSavedLogin(user) {
+            if (!user || restoringLogin || activeAccount) return;
+            restoringLogin = true;
+            showLoading('保存されたログイン情報を確認しています…');
+            try {
+                const snap = await db.collection('users').doc(user.uid).get();
+                if (!snap.exists || snap.data().mustChange) {
+                    await auth.setPersistence(firebase.auth.Auth.Persistence.NONE).catch(() => {});
+                    await auth.signOut().catch(() => {});
+                    return;
+                }
+                const profile = snap.data();
+                const config = await loadSchoolConfig();
+                await completeLogin(profile, config, { askSave: false });
+            } catch (e) {
+                await auth.signOut().catch(() => {});
+                showLogin();
+            } finally {
+                hideLoading();
+                restoringLogin = false;
             }
         }
 
@@ -1399,19 +1348,12 @@
             $('quizMessage').textContent = '';
             $('choices').innerHTML = options.map((option, index) => `
                 <label class="choice">
-                    <input type="radio" name="singleAnswer" value="${option.isCorrect ? '1' : '0'}" data-text="${escapeHtml(option.text)}" autocomplete="off" ${userAnswers[questionIndex] === option.text ? 'checked' : ''}>
+                    <input type="radio" name="singleAnswer" value="${option.isCorrect ? '1' : '0'}" data-text="${escapeHtml(option.text)}" autocomplete="off">
                     ${String.fromCharCode(65 + index)}. ${escapeHtml(option.text)}
                 </label>
             `).join('');
             $('next').textContent = questionIndex === questions.length - 1 ? '採点する' : '回答する';
-            $('previousQuestion').disabled = questionIndex === 0;
         }
-
-        $('previousQuestion').onclick = () => {
-            if (questionIndex <= 0) return;
-            questionIndex -= 1;
-            drawSingleQuestion();
-        };
 
         $('next').onclick = () => {
             const selected = document.querySelector('input[name="singleAnswer"]:checked');
@@ -1419,12 +1361,11 @@
                 $('quizMessage').textContent = '選択肢を選んでください。';
                 return;
             }
-            answers[questionIndex] = selected.value === '1';
-            userAnswers[questionIndex] = selected.dataset.text;
-            if (questionIndex < questions.length - 1) {
-                questionIndex += 1;
-                drawSingleQuestion();
-            } else finishQuiz();
+            answers.push(selected.value === '1');
+            userAnswers.push(selected.dataset.text);
+            questionIndex += 1;
+            if (questionIndex < questions.length) drawSingleQuestion();
+            else finishQuiz();
         };
 
         function drawQuestionList() {
@@ -1761,7 +1702,7 @@
         let cloudRecords = [];
         async function renderTeacherRecords() {
             const info = $('teacherRecordsInfo');
-            info.textContent = '読み込み中…';
+            setInlineLoading(info, '読み込み中…');
             try {
                 // 管理者は全員分。先生は、自分の学年・学科の分だけ（Firestoreのルールでも同じ範囲に制限されている）
                 const isAdmin = activeAccount.role === 'admin';
@@ -1813,7 +1754,7 @@
             const info = $('teacherRecordsInfo');
             if (!list.length) { info.textContent = '削除する記録はありません。'; return; }
             const scope = activeAccount.role === 'admin' ? '全学年・全学科' : `${activeAccount.grade} ${activeAccount.className}`;
-            if (!confirm(`${scope}の生徒の記録 ${list.length}件を、すべて削除します。元に戻せません。よろしいですか？`)) return;
+            if (!await showConfirm(`${scope}の生徒の記録 ${list.length}件を、すべて削除します。元に戻せません。よろしいですか？`, '記録を削除')) return;
             $('deleteAllRecords').disabled = true;
             info.textContent = '削除中…';
             try {
@@ -1829,39 +1770,29 @@
             $('deleteAllRecords').disabled = false;
         });
         const modeLabel = { fill: '入力式', single: '1問ずつ（各問4択）', listChoice: '共通選択肢式' };
-        function showTeacherRecordDetail(record) {
-            if (!record) return;
-            $('teacherRecordsPanel').classList.add('hidden');
-            $('teacherRecordDetailPanel').classList.remove('hidden');
-            const d = Array.isArray(record.details) ? record.details : null;
+        function toggleRecordDetail(row) {
+            const next = row.nextElementSibling;
+            if (next && next.classList.contains('record-detail')) { next.remove(); return; }
+            const r = filteredRecords()[Number(row.dataset.rec)];
+            if (!r) return;
+            const d = Array.isArray(r.details) ? r.details : null;
             const body = d
                 ? d.map((x) => `<div class="feedback ${x.ok ? 'good' : 'bad'}"><b>${escapeHtml(x.n)}. ${x.ok ? '正解' : '不正解'}</b>：${escapeHtml(x.q)}<div>生徒の答え：${escapeHtml(x.you)}</div><div>正解：${escapeHtml(x.ans)}</div></div>`).join('')
                 : '<p class="muted">この記録には詳細がありません（古い記録です）。</p>';
             const wrong = d ? d.filter((x) => !x.ok).map((x) => x.n) : [];
-            const fmt = (iso) => { const dt = new Date(iso); return Number.isNaN(dt.getTime()) ? '' : dt.toLocaleString('ja-JP'); };
-            $('teacherRecordDetail').innerHTML = `
-                <div class="card">
-                    <p><b>日時：</b>${escapeHtml(fmt(record.at))}</p>
-                    <p><b>生徒：</b>${escapeHtml(record.grade)} ${escapeHtml(record.className)}・${escapeHtml(record.attendanceNumber)}番・${escapeHtml(record.userId)}</p>
-                    <p><b>問題セット：</b>${escapeHtml(record.setTitle || '—')}</p>
-                    <p><b>教科・単元：</b>${escapeHtml(record.subject || '—')}・${escapeHtml(record.unit || '—')}</p>
-                    <p><b>得点：</b>${record.score}/${record.total}　<b>形式：</b>${escapeHtml(modeLabel[record.mode] || record.mode || '')}</p>
-                    ${d ? `<p><b>間違えた問題：</b>${wrong.length ? wrong.map((n) => n + '問目').join('、') : 'なし'}</p>` : ''}
-                </div>
-                ${body}`;
+            row.insertAdjacentHTML('afterend', `<tr class="record-detail"><td colspan="6">
+                <p><b>${escapeHtml(r.setTitle || '—')}</b> ／ 形式：${escapeHtml(modeLabel[r.mode] || r.mode || '')} ／ ${r.score}/${r.total}</p>
+                ${d ? `<p>間違えた問題（出題順）：${wrong.length ? wrong.map((n) => n + '問目').join('、') : 'なし'}</p>` : ''}
+                ${body}</td></tr>`);
         }
         $('teacherRecords').addEventListener('click', (event) => {
             const row = event.target.closest('.record-row');
-            if (row) showTeacherRecordDetail(filteredRecords()[Number(row.dataset.rec)]);
+            if (row) toggleRecordDetail(row);
         });
         $('teacherRecords').addEventListener('keydown', (event) => {
             const row = event.target.closest('.record-row');
-            if (row && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); showTeacherRecordDetail(filteredRecords()[Number(row.dataset.rec)]); }
+            if (row && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); toggleRecordDetail(row); }
         });
-        $('backToTeacherRecords').onclick = () => {
-            $('teacherRecordDetailPanel').classList.add('hidden');
-            $('teacherRecordsPanel').classList.remove('hidden');
-        };
         $('recordSetFilter').addEventListener('change', drawTeacherRecords);
         $('recordGradeFilter').addEventListener('change', drawTeacherRecords);
         $('downloadTeacherRecords').addEventListener('click', () => {
@@ -1879,7 +1810,7 @@
 
         function showTeacherMenu() {
             $('teacherMenu').classList.remove('hidden');
-            ['teacherCreatePanel', 'teacherRecordsPanel', 'teacherRecordDetailPanel', 'teacherCurrentQuestionsPanel'].forEach((id) => {
+            ['teacherCreatePanel', 'teacherRecordsPanel', 'teacherCurrentQuestionsPanel'].forEach((id) => {
                 $(id).classList.add('hidden');
             });
         }
@@ -1911,16 +1842,15 @@
         $('teacherQuestionList').addEventListener('click', async (event) => {
             const button = event.target.closest('[data-delete-set]');
             if (!button) return;
-            if (!window.confirm(`「${button.dataset.deleteTitle}」を削除します。生徒の画面からも消えます。よろしいですか？`)) return;
+            if (!await showConfirm(`「${button.dataset.deleteTitle}」を削除します。生徒の画面からも消えます。よろしいですか？`, '問題セットを削除')) return;
             button.disabled = true;
             try {
                 await db.collection('questionSets').doc(button.dataset.deleteSet).delete();
-                remoteQuestions = remoteQuestions.filter((q) => q.setId !== button.dataset.deleteSet);
+                remoteQuestions = await loadRemoteQuestions();
                 renderTeacherQuestions();
-                populateSourceQuestionList();
             } catch {
                 button.disabled = false;
-                window.alert('削除できませんでした。もう一度試してください。');
+                await showAlert('削除できませんでした。もう一度試してください。', '削除できませんでした');
             }
         });
 
@@ -2087,10 +2017,18 @@
             .observe(document.body, { childList: true, subtree: true });
 
         initFirebase();
-        loadSavedLoginInfo();
+        if (auth) {
+            auth.onAuthStateChanged((user) => {
+                if (user && !activeAccount && !signingIn) restoreSavedLogin(user);
+            });
+        }
         populateSourceQuestionList();
         updateReleaseFields();
-
+        window.setInterval(() => {
+            if (viewMode === 'student' && !$('profile').classList.contains('hidden')) {
+                populateStudentQuestionSets();
+            }
+        }, 30_000);
     </script>
 </body>
 
