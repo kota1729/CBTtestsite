@@ -634,7 +634,7 @@
                     <button class="toggle-pw-btn" type="button" data-target="newPasswordConfirm" aria-pressed="false">表示</button>
                 </div>
             </div>
-            <div class="auth-btns"><button id="savePassword" type="button">変更してはじめる</button><button class="secondary" id="cancelPassword" type="button">キャンセル</button></div>
+            <div class="auth-btns"><button id="savePassword" type="button">変更してはじめる</button><button class="secondary" id="skipPassword" type="button">スキップ</button></div>
             <p class="muted auth-msg" id="pwChangeMessage" role="status"></p>
         </section>
         <section class="card hidden" id="roleChooser">
@@ -745,6 +745,11 @@
                     </table>
                 </div>
             </section>
+            <section class="card hidden" id="teacherRecordDetailPanel">
+                <div class="actions"><button class="secondary" type="button" id="backToTeacherRecords">生徒の記録一覧へ戻る</button></div>
+                <h3>生徒の記録詳細</h3>
+                <div id="teacherRecordDetail"></div>
+            </section>
             <section class="card hidden" id="teacherCurrentQuestionsPanel">
                 <div class="actions"><button class="secondary" type="button" data-teacher-menu>先生メニューへ戻る</button></div>
                 <h3>公開している問題セット <span class="muted" id="teacherQuestionCount"></span></h3>
@@ -756,7 +761,7 @@
                 <div class="qhead"><span id="progress">問題 1 / 10</span><span class="pill" id="category"></span></div>
                 <div class="question" id="prompt"></div>
                 <div class="choices" id="choices"></div>
-                <div class="actions"><button id="next">回答する</button><button class="secondary" id="quit">中断</button>
+                <div class="actions"><button class="secondary" id="previousQuestion" type="button">前の問題</button><button id="next">回答する</button><button class="secondary" id="quit">中断</button>
                 </div>
                 <p class="muted" id="quizMessage"></p>
             </div>
@@ -835,6 +840,9 @@
         let availableQuestionSets = [];
         let selectedQuestionSet = null;
         let viewMode = '';
+        let unsubscribeQuestionSets = null;
+        let unsubscribeTemplates = null;
+        let unsubscribeResults = null;
 
         function shuffle(items) {
             const a = [...items];
@@ -892,6 +900,74 @@
             }
         }
 
+        function applyQuestionSetsSnapshot(snap) {
+            const out = [];
+            snap.forEach((doc) => {
+                const set = doc.data();
+                (set.questions || []).forEach((item) => out.push({
+                    c: item.c || set.unit || set.subject || '', setId: doc.id, setTitle: set.setTitle, subject: set.subject || '',
+                    unit: set.unit || '', targets: set.targets || [], type: set.type, q: item.q, a: item.a,
+                    k: item.k || 0, releaseAt: set.releaseAt || '', createdBy: set.createdBy || '', remote: true,
+                }));
+            });
+            remoteQuestions = out;
+            if (viewMode === 'student' && !$('profile').classList.contains('hidden')) populateStudentQuestionSets();
+            if (viewMode === 'teacher') {
+                populateSourceQuestionList();
+                renderTeacherQuestions();
+            }
+        }
+
+        function startRealtimeUpdates() {
+            if (!db) return;
+            if (unsubscribeQuestionSets) unsubscribeQuestionSets();
+            unsubscribeQuestionSets = db.collection('questionSets').onSnapshot(
+                (snap) => applyQuestionSetsSnapshot(snap),
+                () => { /* 一時的な通信エラー時は現在の内容を維持 */ }
+            );
+            if (activeAccount && activeAccount.role === 'teacher') {
+                if (unsubscribeTemplates) unsubscribeTemplates();
+                unsubscribeTemplates = db.collection('templates').onSnapshot(
+                    (snap) => {
+                        templateList = []; window.questionBank = [];
+                        snap.forEach((doc) => {
+                            const t = doc.data();
+                            templateList.push({ id: doc.id, title: t.setTitle || '', subject: t.subject || '', unit: t.unit || '', count: (t.questions || []).length });
+                            (t.questions || []).forEach((item) => window.questionBank.push({
+                                c: item.c || t.unit || t.subject || '', q: item.q, a: item.a, k: item.k || 0,
+                                subject: t.subject || '未設定', unit: t.unit || item.c || '', template: t.setTitle || '',
+                            }));
+                        });
+                        templateList.sort((x, y) => x.subject.localeCompare(y.subject, 'ja') || x.title.localeCompare(y.title, 'ja'));
+                        populateSubjectOptions();
+                        populateUnitList();
+                        populateSourceQuestionList();
+                    },
+                    () => { /* 権限・通信エラー時は現在の内容を維持 */ }
+                );
+            }
+            if (unsubscribeResults) unsubscribeResults();
+            const resultQuery = activeAccount?.role === 'admin'
+                ? db.collection('results').orderBy('at', 'desc').limit(3000)
+                : activeAccount?.role === 'teacher'
+                    ? db.collection('results').where('grade', '==', activeAccount.grade).where('className', '==', activeAccount.className)
+                    : null;
+            if (resultQuery) {
+                unsubscribeResults = resultQuery.onSnapshot((snap) => {
+                    cloudRecords = [];
+                    snap.forEach((doc) => cloudRecords.push({ ...doc.data(), _id: doc.id }));
+                    cloudRecords.sort((x, y) => String(y.at).localeCompare(String(x.at)));
+                    if (viewMode === 'teacher' && !$('teacherRecordsPanel').classList.contains('hidden')) {
+                        const current = $('recordSetFilter').value;
+                        const titles = [...new Set(cloudRecords.map((r) => r.setTitle).filter(Boolean))].sort((x, y) => x.localeCompare(y, 'ja'));
+                        $('recordSetFilter').innerHTML = '<option value="">すべて</option>' + titles.map((t) => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+                        $('recordSetFilter').value = titles.includes(current) ? current : '';
+                        drawTeacherRecords();
+                    }
+                }, () => { /* 一時的な通信エラー時は現在の内容を維持 */ });
+            }
+        }
+
         function getCustomQuestions() {
             return remoteQuestions;
         }
@@ -904,6 +980,9 @@
         }
 
         function showLogin() {
+            if (unsubscribeQuestionSets) { unsubscribeQuestionSets(); unsubscribeQuestionSets = null; }
+            if (unsubscribeTemplates) { unsubscribeTemplates(); unsubscribeTemplates = null; }
+            if (unsubscribeResults) { unsubscribeResults(); unsubscribeResults = null; }
             hideViews();
             document.body.classList.add('auth-mode');
             $('loginPanel').classList.remove('hidden');
@@ -1044,7 +1123,24 @@
             msg.textContent = '';
             await completeLogin(m.profile, m.config);
         };
-        $('cancelPassword').onclick = showLogin;
+        $('skipPassword').onclick = async () => {
+            const m = pendingMatch;
+            if (!m) return;
+            const proceed = window.confirm('パスワードを変更せずにスキップすると、初期パスワードのまま利用することになります。初期パスワードは他の人に知られないようにしてください。\n\nこのまま初期パスワードで利用しますか？');
+            if (proceed) {
+                const profile = m.profile, config = m.config;
+                try { await db.collection('users').doc(m.user.uid).update({ mustChange: false }); } catch {
+                    $('pwChangeMessage').textContent = 'ログインを続行できませんでした。通信を確認してもう一度試してください。';
+                    return;
+                }
+                pendingMatch = null;
+                $('newPassword').value = ''; $('newPasswordConfirm').value = ''; $('pwChangeMessage').textContent = '';
+                await completeLogin(profile, config);
+            } else {
+                $('pwChangeMessage').textContent = 'パスワードの変更を続けてください。';
+                $('newPassword').focus();
+            }
+        };
 
         async function completeLogin(profile, config) {
             activeSchool = (window.SCHOOL_LIST || [])[0] || { id: 'main' };
@@ -1056,6 +1152,7 @@
                 grade: profile.grade || '', className: profile.className || '',
             };
             remoteQuestions = await loadRemoteQuestions();
+            startRealtimeUpdates();
             $('passwordInput').value = '';
             document.querySelectorAll('.admin-only').forEach((el) => el.classList.toggle('hidden', profile.role !== 'admin'));
             if (profile.role === 'admin') showRoleChooser();
@@ -1216,12 +1313,19 @@
             $('quizMessage').textContent = '';
             $('choices').innerHTML = options.map((option, index) => `
                 <label class="choice">
-                    <input type="radio" name="singleAnswer" value="${option.isCorrect ? '1' : '0'}" data-text="${escapeHtml(option.text)}" autocomplete="off">
+                    <input type="radio" name="singleAnswer" value="${option.isCorrect ? '1' : '0'}" data-text="${escapeHtml(option.text)}" autocomplete="off" ${userAnswers[questionIndex] === option.text ? 'checked' : ''}>
                     ${String.fromCharCode(65 + index)}. ${escapeHtml(option.text)}
                 </label>
             `).join('');
             $('next').textContent = questionIndex === questions.length - 1 ? '採点する' : '回答する';
+            $('previousQuestion').disabled = questionIndex === 0;
         }
+
+        $('previousQuestion').onclick = () => {
+            if (questionIndex <= 0) return;
+            questionIndex -= 1;
+            drawSingleQuestion();
+        };
 
         $('next').onclick = () => {
             const selected = document.querySelector('input[name="singleAnswer"]:checked');
@@ -1229,11 +1333,12 @@
                 $('quizMessage').textContent = '選択肢を選んでください。';
                 return;
             }
-            answers.push(selected.value === '1');
-            userAnswers.push(selected.dataset.text);
-            questionIndex += 1;
-            if (questionIndex < questions.length) drawSingleQuestion();
-            else finishQuiz();
+            answers[questionIndex] = selected.value === '1';
+            userAnswers[questionIndex] = selected.dataset.text;
+            if (questionIndex < questions.length - 1) {
+                questionIndex += 1;
+                drawSingleQuestion();
+            } else finishQuiz();
         };
 
         function drawQuestionList() {
@@ -1638,29 +1743,39 @@
             $('deleteAllRecords').disabled = false;
         });
         const modeLabel = { fill: '入力式', single: '1問ずつ（各問4択）', listChoice: '共通選択肢式' };
-        function toggleRecordDetail(row) {
-            const next = row.nextElementSibling;
-            if (next && next.classList.contains('record-detail')) { next.remove(); return; }
-            const r = filteredRecords()[Number(row.dataset.rec)];
-            if (!r) return;
-            const d = Array.isArray(r.details) ? r.details : null;
+        function showTeacherRecordDetail(record) {
+            if (!record) return;
+            $('teacherRecordsPanel').classList.add('hidden');
+            $('teacherRecordDetailPanel').classList.remove('hidden');
+            const d = Array.isArray(record.details) ? record.details : null;
             const body = d
                 ? d.map((x) => `<div class="feedback ${x.ok ? 'good' : 'bad'}"><b>${escapeHtml(x.n)}. ${x.ok ? '正解' : '不正解'}</b>：${escapeHtml(x.q)}<div>生徒の答え：${escapeHtml(x.you)}</div><div>正解：${escapeHtml(x.ans)}</div></div>`).join('')
                 : '<p class="muted">この記録には詳細がありません（古い記録です）。</p>';
             const wrong = d ? d.filter((x) => !x.ok).map((x) => x.n) : [];
-            row.insertAdjacentHTML('afterend', `<tr class="record-detail"><td colspan="6">
-                <p><b>${escapeHtml(r.setTitle || '—')}</b> ／ 形式：${escapeHtml(modeLabel[r.mode] || r.mode || '')} ／ ${r.score}/${r.total}</p>
-                ${d ? `<p>間違えた問題（出題順）：${wrong.length ? wrong.map((n) => n + '問目').join('、') : 'なし'}</p>` : ''}
-                ${body}</td></tr>`);
+            const fmt = (iso) => { const dt = new Date(iso); return Number.isNaN(dt.getTime()) ? '' : dt.toLocaleString('ja-JP'); };
+            $('teacherRecordDetail').innerHTML = `
+                <div class="card">
+                    <p><b>日時：</b>${escapeHtml(fmt(record.at))}</p>
+                    <p><b>生徒：</b>${escapeHtml(record.grade)} ${escapeHtml(record.className)}・${escapeHtml(record.attendanceNumber)}番・${escapeHtml(record.userId)}</p>
+                    <p><b>問題セット：</b>${escapeHtml(record.setTitle || '—')}</p>
+                    <p><b>教科・単元：</b>${escapeHtml(record.subject || '—')}・${escapeHtml(record.unit || '—')}</p>
+                    <p><b>得点：</b>${record.score}/${record.total}　<b>形式：</b>${escapeHtml(modeLabel[record.mode] || record.mode || '')}</p>
+                    ${d ? `<p><b>間違えた問題：</b>${wrong.length ? wrong.map((n) => n + '問目').join('、') : 'なし'}</p>` : ''}
+                </div>
+                ${body}`;
         }
         $('teacherRecords').addEventListener('click', (event) => {
             const row = event.target.closest('.record-row');
-            if (row) toggleRecordDetail(row);
+            if (row) showTeacherRecordDetail(filteredRecords()[Number(row.dataset.rec)]);
         });
         $('teacherRecords').addEventListener('keydown', (event) => {
             const row = event.target.closest('.record-row');
-            if (row && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); toggleRecordDetail(row); }
+            if (row && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); showTeacherRecordDetail(filteredRecords()[Number(row.dataset.rec)]); }
         });
+        $('backToTeacherRecords').onclick = () => {
+            $('teacherRecordDetailPanel').classList.add('hidden');
+            $('teacherRecordsPanel').classList.remove('hidden');
+        };
         $('recordSetFilter').addEventListener('change', drawTeacherRecords);
         $('recordGradeFilter').addEventListener('change', drawTeacherRecords);
         $('downloadTeacherRecords').addEventListener('click', () => {
@@ -1678,7 +1793,7 @@
 
         function showTeacherMenu() {
             $('teacherMenu').classList.remove('hidden');
-            ['teacherCreatePanel', 'teacherRecordsPanel', 'teacherCurrentQuestionsPanel'].forEach((id) => {
+            ['teacherCreatePanel', 'teacherRecordsPanel', 'teacherRecordDetailPanel', 'teacherCurrentQuestionsPanel'].forEach((id) => {
                 $(id).classList.add('hidden');
             });
         }
@@ -1714,8 +1829,9 @@
             button.disabled = true;
             try {
                 await db.collection('questionSets').doc(button.dataset.deleteSet).delete();
-                remoteQuestions = await loadRemoteQuestions();
+                remoteQuestions = remoteQuestions.filter((q) => q.setId !== button.dataset.deleteSet);
                 renderTeacherQuestions();
+                populateSourceQuestionList();
             } catch {
                 button.disabled = false;
                 window.alert('削除できませんでした。もう一度試してください。');
@@ -1887,11 +2003,7 @@
         initFirebase();
         populateSourceQuestionList();
         updateReleaseFields();
-        window.setInterval(() => {
-            if (viewMode === 'student' && !$('profile').classList.contains('hidden')) {
-                populateStudentQuestionSets();
-            }
-        }, 30_000);
+
     </script>
 </body>
 
