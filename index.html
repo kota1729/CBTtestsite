@@ -2028,9 +2028,16 @@
 
         initFirebase();
         if (auth) {
+            // Firebase が保存済みのログイン状態を確認するまでログイン画面を出さず、更新時のちらつきを防ぐ。
+            showLoading('ログイン状態を確認しています…');
             auth.onAuthStateChanged(async (user) => {
                 await persistenceReady;
-                if (user && !activeAccount && !signingIn) restoreSavedLogin(user);
+                if (user && !activeAccount && !signingIn) {
+                    await restoreSavedLogin(user);
+                } else if (!user && !activeAccount && !signingIn) {
+                    showLogin();
+                }
+                hideLoading();
             });
         }
         populateSourceQuestionList();
