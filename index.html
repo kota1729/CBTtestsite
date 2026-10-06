@@ -338,6 +338,30 @@
             justify-content: flex-end;
         }
 
+        .auth-dialog {
+            position: fixed;
+            inset: 0;
+            z-index: 3000;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            background: rgba(16, 35, 56, .58);
+            backdrop-filter: blur(2px);
+        }
+        .auth-dialog.hidden { display: none !important; }
+        .auth-dialog-card {
+            width: min(100%, 460px);
+            padding: 25px;
+            border-radius: 16px;
+            background: #fff;
+            box-shadow: 0 20px 70px rgba(16,35,56,.28);
+            border: 1px solid var(--line);
+        }
+        .auth-dialog-card h2 { margin: 0 0 10px; color: var(--navy); font-size: 21px; }
+        .auth-dialog-card p { margin: 0; color: var(--muted); white-space: pre-line; }
+        .auth-dialog-card .actions { justify-content: flex-end; margin-top: 20px; }
+        .auth-dialog-card .actions button { min-width: 120px; }
+
         .password-login-field {
             grid-column: 1 / -1;
         }
@@ -815,6 +839,17 @@
                 </div>
             </section>
         </div>
+        <div id="authDialog" class="auth-dialog hidden" role="presentation">
+            <section class="auth-dialog-card" role="dialog" aria-modal="true" aria-labelledby="authDialogTitle"
+                aria-describedby="authDialogMessage">
+                <h2 id="authDialogTitle">確認</h2>
+                <p id="authDialogMessage"></p>
+                <div class="actions">
+                    <button class="secondary" id="authDialogCancel" type="button">キャンセル</button>
+                    <button id="authDialogOk" type="button">OK</button>
+                </div>
+            </section>
+        </div>
         </div>
     </main>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -1007,6 +1042,47 @@
         let auth = null;
         let db = null;
         let pendingMatch = null;
+        const SAVED_LOGIN_KEY = 'cbtSavedLoginInfo';
+        let authDialogResolver = null;
+
+        function showAuthDialog({ title = '確認', message = '', okText = 'OK', cancelText = 'キャンセル', danger = false }) {
+            $('authDialogTitle').textContent = title;
+            $('authDialogMessage').textContent = message;
+            $('authDialogOk').textContent = okText;
+            $('authDialogCancel').textContent = cancelText;
+            $('authDialogOk').classList.toggle('danger', !!danger);
+            $('authDialog').classList.remove('hidden');
+            setTimeout(() => $('authDialogOk').focus(), 0);
+            return new Promise((resolve) => { authDialogResolver = resolve; });
+        }
+        function closeAuthDialog(result) {
+            $('authDialog').classList.add('hidden');
+            if (authDialogResolver) { const resolve = authDialogResolver; authDialogResolver = null; resolve(result); }
+        }
+        $('authDialogOk').onclick = () => closeAuthDialog(true);
+        $('authDialogCancel').onclick = () => closeAuthDialog(false);
+        $('authDialog').addEventListener('click', (event) => { if (event.target === $('authDialog')) closeAuthDialog(false); });
+        function loadSavedLoginInfo() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(SAVED_LOGIN_KEY) || 'null');
+                if (!saved || !saved.userId || !saved.password) return;
+                $('userIdInput').value = saved.userId;
+                $('passwordInput').value = saved.password;
+            } catch (_) { localStorage.removeItem(SAVED_LOGIN_KEY); }
+        }
+        async function askSaveLoginInfo(userId, password) {
+            const save = await showAuthDialog({
+                title: 'ログイン情報を保存しますか？',
+                message: 'このブラウザにユーザーIDとパスワードを保存できます。次回から入力の手間を省けます。\n\n共有のパソコンでは「保存しない」を選んでください。',
+                okText: '保存する',
+                cancelText: '保存しない'
+            });
+            if (save) {
+                localStorage.setItem(SAVED_LOGIN_KEY, JSON.stringify({ userId, password }));
+            } else {
+                localStorage.removeItem(SAVED_LOGIN_KEY);
+            }
+        }
 
         function initFirebase() {
             const cfg = window.FIREBASE_CONFIG;
@@ -1091,7 +1167,7 @@
                     $('newPassword').focus();
                     return;
                 }
-                await completeLogin(profile, config);
+                await completeLogin(profile, config, { userId, password });
             } catch (error) {
                 $('loginMessage').textContent = loginErrorMessage(error);
             } finally {
@@ -1117,32 +1193,39 @@
             } finally {
                 $('savePassword').disabled = false;
             }
+            const loginInfo = { userId: m.profile.userId, password: a };
             pendingMatch = null;
             $('newPassword').value = '';
             $('newPasswordConfirm').value = '';
             msg.textContent = '';
-            await completeLogin(m.profile, m.config);
+            await completeLogin(m.profile, m.config, loginInfo);
         };
         $('skipPassword').onclick = async () => {
             const m = pendingMatch;
             if (!m) return;
-            const proceed = window.confirm('パスワードを変更せずにスキップすると、初期パスワードのまま利用することになります。初期パスワードは他の人に知られないようにしてください。\n\nこのまま初期パスワードで利用しますか？');
+            const proceed = await showAuthDialog({
+                title: '初期パスワードのまま利用しますか？',
+                message: 'パスワードを変更せずにスキップすると、初期パスワードのまま利用することになります。\n\n初期パスワードは他の人に知られないようにしてください。\n\nこのまま初期パスワードで利用しますか？',
+                okText: '初期パスワードで続ける',
+                cancelText: 'パスワードを変更する'
+            });
             if (proceed) {
                 const profile = m.profile, config = m.config;
                 try { await db.collection('users').doc(m.user.uid).update({ mustChange: false }); } catch {
                     $('pwChangeMessage').textContent = 'ログインを続行できませんでした。通信を確認してもう一度試してください。';
                     return;
                 }
+                const loginInfo = { userId: m.profile.userId, password: m.password };
                 pendingMatch = null;
                 $('newPassword').value = ''; $('newPasswordConfirm').value = ''; $('pwChangeMessage').textContent = '';
-                await completeLogin(profile, config);
+                await completeLogin(profile, config, loginInfo);
             } else {
                 $('pwChangeMessage').textContent = 'パスワードの変更を続けてください。';
                 $('newPassword').focus();
             }
         };
 
-        async function completeLogin(profile, config) {
+        async function completeLogin(profile, config, loginInfo = null) {
             activeSchool = (window.SCHOOL_LIST || [])[0] || { id: 'main' };
             activeSchoolConfig = config;
             activeClass = null;
@@ -1158,6 +1241,9 @@
             if (profile.role === 'admin') showRoleChooser();
             else if (profile.role === 'teacher') await enterTeacher();
             else enterStudent();
+            if (loginInfo && loginInfo.userId && loginInfo.password) {
+                await askSaveLoginInfo(loginInfo.userId, loginInfo.password);
+            }
         }
 
         // 「1年 情報ビジネス科 5番さん」の形で表示する（ユーザーIDは表示しない）
@@ -2001,6 +2087,7 @@
             .observe(document.body, { childList: true, subtree: true });
 
         initFirebase();
+        loadSavedLoginInfo();
         populateSourceQuestionList();
         updateReleaseFields();
 
