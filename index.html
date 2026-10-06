@@ -1002,6 +1002,7 @@
         let auth = null;
         let db = null;
         let pendingMatch = null;
+        let persistenceReady = Promise.resolve();
 
         function initFirebase() {
             const cfg = window.FIREBASE_CONFIG;
@@ -1013,7 +1014,10 @@
             firebase.initializeApp(cfg);
             auth = firebase.auth();
             db = firebase.firestore();
-            auth.setPersistence(firebase.auth.Auth.Persistence.NONE).catch(() => {});
+            // 保存設定はログイン情報そのものではなく、保存方法だけをlocalStorageに保持する。
+            // ページ更新のたびにNONEへ戻すと、2回目以降のF5でFirebaseの認証状態が消えるため、ここでは上書きしない。
+            const pref = localStorage.getItem('cbt_login_persistence');
+            persistenceReady = auth.setPersistence(pref === 'local' ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.NONE).catch(() => {});
         }
 
         function loadSchoolConfig() {
@@ -1060,6 +1064,7 @@
             const userId = $('userIdInput').value.trim();
             const password = $('passwordInput').value;
             if (!auth) return;
+            await persistenceReady;
             if (!userId || !password) {
                 $('loginMessage').textContent = 'ユーザーIDとパスワードを入力してください。';
                 return;
@@ -1153,9 +1158,13 @@
                 loginPromptShown = true;
                 const save = await showConfirm('次回からこの端末で自動的にログインした状態にしますか？\n\n「保存する」を選ぶと、F5で更新してもログイン画面には戻りません。', 'ログイン情報の保存', { cancelText: '保存しない', okText: '保存する' });
                 try {
+                    localStorage.setItem('cbt_login_persistence', save ? 'local' : 'none');
                     await auth.setPersistence(save ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.NONE);
                 } catch (e) {
-                    if (save) await showAlert('ログイン情報の保存に失敗しました。次回のページ更新時には再ログインが必要になる場合があります。', '保存できませんでした');
+                    if (save) {
+                        localStorage.setItem('cbt_login_persistence', 'none');
+                        await showAlert('ログイン情報の保存に失敗しました。次回のページ更新時には再ログインが必要になる場合があります。', '保存できませんでした');
+                    }
                 }
                 loginPromptShown = false;
             }
@@ -1179,6 +1188,7 @@
             try {
                 const snap = await db.collection('users').doc(user.uid).get();
                 if (!snap.exists || snap.data().mustChange) {
+                    localStorage.setItem('cbt_login_persistence', 'none');
                     await auth.setPersistence(firebase.auth.Auth.Persistence.NONE).catch(() => {});
                     await auth.signOut().catch(() => {});
                     return;
@@ -2018,7 +2028,8 @@
 
         initFirebase();
         if (auth) {
-            auth.onAuthStateChanged((user) => {
+            auth.onAuthStateChanged(async (user) => {
+                await persistenceReady;
                 if (user && !activeAccount && !signingIn) restoreSavedLogin(user);
             });
         }
