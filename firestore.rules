@@ -11,10 +11,14 @@ service cloud.firestore {
     match /users/{uid} {
       // 自分の情報／管理者は全員分／先生は自分の学年・学科の分
       allow read: if signedIn() && (request.auth.uid == uid || isAdmin() || sameClass(resource.data));
-      // 本人が書き換えられるのは「mustChange を false にする」ことだけ
+      // 本人が書き換えられるのは「mustChange を false にする」ことと、パスワード変更日時(pwChangedAt)を今にすること。
+      // パスワード変更日時は、前回から7日たっているときだけ更新できる（管理画面でリセットすると、この記録は消える）
       allow update: if signedIn() && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mustChange'])
-        && request.resource.data.mustChange == false;
+        && request.resource.data.mustChange == false
+        && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mustChange'])
+            || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mustChange', 'pwChangedAt'])
+                && request.resource.data.pwChangedAt == request.time
+                && (!('pwChangedAt' in resource.data) || request.time > resource.data.pwChangedAt + duration.value(7, 'd'))));
       allow create, delete: if false;
     }
 

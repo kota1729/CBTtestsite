@@ -928,3 +928,8 @@ h1::after { content: ""; display: block; width: 70px; height: 4px; margin: 8px a
 .btn-danger { background: var(--accent); }
 .modal-box { border-radius: 14px 6px 14px 6px; }
 .modal-btns .btn { flex: 0 0 auto; min-width: 120px; padding: 11px 20px; font-size: 15px; }
+
+/* 教科の選びなおし・戻るボタンは目立たせる */
+.btn-nav { display: flex; width: 100%; margin-top: 22px; padding: 14px 10px; font-size: 16px; background: #fff; color: var(--good); border: 2px solid var(--good); box-shadow: 0 2px 0 #1f5a4e; }
+.btn-nav:hover { background: #e6f2ec; }
+.btn-tool { display: flex; width: 100%; margin-top: 14px; padding: 12px 10px; font-size: 14px; border: 1px solid #d8cdb5; }

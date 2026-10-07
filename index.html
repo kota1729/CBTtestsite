@@ -683,6 +683,26 @@
             <div class="auth-btns"><button id="savePassword" type="button">変更してはじめる</button><button class="secondary" id="cancelPassword" type="button">スキップ</button></div>
             <p class="muted auth-msg" id="pwChangeMessage" role="status"></p>
         </section>
+        <section class="card hidden" id="selfPwPanel">
+            <h1 class="auth-title">パスワードの変更</h1>
+            <p class="auth-sub" id="selfPwNote"></p>
+            <div class="auth-form">
+                <div class="password-wrapper">
+                    <input id="curPw" type="password" autocomplete="off" placeholder="今のパスワード">
+                    <button class="toggle-pw-btn" type="button" data-target="curPw" aria-pressed="false">表示</button>
+                </div>
+                <div class="password-wrapper">
+                    <input id="selfNewPw" type="password" autocomplete="off" placeholder="新しいパスワード（8文字以上）">
+                    <button class="toggle-pw-btn" type="button" data-target="selfNewPw" aria-pressed="false">表示</button>
+                </div>
+                <div class="password-wrapper">
+                    <input id="selfNewPwConfirm" type="password" autocomplete="off" placeholder="新しいパスワード（確認）">
+                    <button class="toggle-pw-btn" type="button" data-target="selfNewPwConfirm" aria-pressed="false">表示</button>
+                </div>
+            </div>
+            <div class="auth-btns"><button id="saveSelfPw" type="button">変更する</button><button class="secondary" id="cancelSelfPw" type="button" data-to-apps>戻る</button></div>
+            <p class="muted auth-msg" id="selfPwMessage" role="status"></p>
+        </section>
         <section class="card hidden" id="appChooser">
             <h1 class="auth-title">CBTとI1、どちらを使いますか？</h1>
             <p class="auth-sub" id="appChooserWho"></p>
@@ -690,7 +710,7 @@
                 <button type="button" id="chooseCbt">CBTテスト（小テスト）</button>
                 <button type="button" id="chooseI1">I1テスト対策（一問一答）</button>
             </div>
-            <div class="auth-btns"><button class="danger" type="button" id="appChooserLogout">ログアウト</button></div>
+            <div class="auth-btns"><button class="secondary" type="button" id="openSelfPw">パスワードを変更する</button><button class="danger" type="button" id="appChooserLogout">ログアウト</button></div>
         </section>
         <section class="card hidden" id="roleChooser">
             <h1 class="auth-title">CBTテスト：どの画面を開きますか？</h1>
@@ -701,7 +721,7 @@
                 <button type="button" id="chooseAdmin">管理画面（生徒の登録・パスワード・問題テンプレート）</button>
             </div>
             <p class="muted auth-msg" id="chooserMessage" role="status"></p>
-            <div class="auth-btns"><button class="secondary" type="button" data-to-apps>CBT・I1の選択に戻る</button><button class="danger" type="button" id="chooserLogout">ログアウト</button></div>
+            <div class="auth-btns"><button class="secondary" type="button" data-to-apps>CBT・I1の選択に戻る</button></div>
         </section>
         <section class="card hidden" id="profile">
             <h2 class="section-title">小テスト</h2>
@@ -709,8 +729,7 @@
             <h3>実施できる問題セット</h3>
             <div id="questionSetList" class="question-set-list" aria-label="実施できる問題セット"></div>
             <div class="actions"><button class="secondary" id="showTeacher">結果一覧</button><button class="secondary" type="button" data-to-apps>CBT・I1の選択に戻る</button><button class="secondary hidden admin-only"
-                    type="button" data-to-chooser>先生・生徒・管理の選択に戻る</button><button class="danger"
-                    id="logoutButton">ログアウト</button></div>
+                    type="button" data-to-chooser>先生・生徒・管理の選択に戻る</button></div>
         </section>
         <section class="card hidden" id="teacherDashboard">
             <h2 class="section-title">先生用：問題作成</h2>
@@ -725,7 +744,7 @@
                 <button class="question-set-card" type="button" data-teacher-view="current"><span
                         class="question-set-title">現在作っている問題</span><span class="question-set-action">問題セット一覧を開く
                         →</span></button>
-                <div class="actions"><button class="secondary hidden admin-only" type="button" data-to-chooser>先生・生徒・管理の選択に戻る</button><button class="secondary" type="button" data-to-apps>CBT・I1の選択に戻る</button><button class="danger" type="button" id="teacherMenuLogout">ログアウト</button></div>
+                <div class="actions"><button class="secondary hidden admin-only" type="button" data-to-chooser>先生・生徒・管理の選択に戻る</button><button class="secondary" type="button" data-to-apps>CBT・I1の選択に戻る</button></div>
             </div>
             <section class="hidden" id="teacherCreatePanel">
                 <div class="actions"><button class="secondary" type="button" data-teacher-menu>先生メニューへ戻る</button></div>
@@ -769,8 +788,7 @@
                         <button id="clearAllQuestions" type="button" class="secondary">選択をすべて外す</button>
                     </div>
                     <div id="sourceQuestionList" class="source-question-list" aria-label="選択できる既存問題"></div>
-                    <div class="actions"><button type="submit">選んだ問題でセットを保存</button><button class="danger"
-                            type="button" id="teacherLogoutButton">ログアウト</button></div>
+                    <div class="actions"><button type="submit">選んだ問題でセットを保存</button></div>
                     <p class="muted" id="authorMessage" role="status"></p>
                 </form>
             </section>
@@ -997,7 +1015,7 @@
         if (location.hash === '#menu') history.replaceState(null, '', location.pathname + location.search);   // I1からの戻りリンク
         function hideViews() {
             document.body.classList.remove('auth-mode');
-            ['loginPanel', 'passwordChangePanel', 'appChooser', 'roleChooser', 'profile', 'quiz', 'result', 'teacher', 'teacherDashboard'].forEach((id) => {
+            ['loginPanel', 'passwordChangePanel', 'selfPwPanel', 'appChooser', 'roleChooser', 'profile', 'quiz', 'result', 'teacher', 'teacherDashboard'].forEach((id) => {
                 $(id).classList.add('hidden');
             });
         }
@@ -1143,8 +1161,9 @@
             $('savePassword').disabled = true;
             showLoading('パスワードを変更しています…');
             try {
+                await db.collection('users').doc(m.user.uid).update({ mustChange: false, pwChangedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                m.profile.pwChangedAt = Date.now();
                 await m.user.updatePassword(a);
-                await db.collection('users').doc(m.user.uid).update({ mustChange: false });
             } catch {
                 msg.textContent = 'パスワードを変更できませんでした。もう一度ログインしてやり直してください。';
                 return;
@@ -1187,6 +1206,8 @@
                 userId: profile.userId, role: profile.role, name: profile.name || '',
                 attendanceNumber: profile.attendanceNumber || '',
                 grade: profile.grade || '', className: profile.className || '',
+                email: auth && auth.currentUser ? auth.currentUser.email : '',
+                pwChangedAt: tsMs(profile.pwChangedAt),
             };
             if (options.askSave && !restoringLogin && !loginPromptShown) {
                 loginPromptShown = true;
@@ -1266,6 +1287,51 @@
         $('chooseI1').onclick = () => { location.href = './I1/'; };
         $('appChooserLogout').onclick = showLogin;
 
+
+        // ---- パスワードの変更（最初の画面から。変更後は1週間は変えられない） ----
+        const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+        const tsMs = (t) => (t && typeof t.toMillis === 'function') ? t.toMillis() : (typeof t === 'number' ? t : 0);
+        function showSelfPw() {
+            hideViews();
+            document.body.classList.add('auth-mode');
+            $('selfPwPanel').classList.remove('hidden');
+            ['curPw', 'selfNewPw', 'selfNewPwConfirm'].forEach((id) => { $(id).value = ''; $(id).type = 'password'; });
+            document.querySelectorAll('#selfPwPanel .toggle-pw-btn').forEach((b) => { b.textContent = '表示'; b.setAttribute('aria-pressed', 'false'); });
+            $('selfPwMessage').textContent = '';
+            const next = (activeAccount.pwChangedAt || 0) + WEEK_MS;
+            const locked = activeAccount.pwChangedAt && next > Date.now();
+            $('selfPwNote').textContent = locked
+                ? `パスワードは、変更から1週間は変えられません。${new Date(next).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}以降に変更できます。`
+                : 'パスワードを変更すると、そこから1週間は再び変更できません。';
+            $('saveSelfPw').disabled = Boolean(locked);
+        }
+        $('openSelfPw').onclick = showSelfPw;
+        $('saveSelfPw').onclick = async () => {
+            const msg = $('selfPwMessage'), cur = $('curPw').value, a = $('selfNewPw').value;
+            if (!cur || !a) { msg.textContent = '今のパスワードと新しいパスワードを入力してください。'; return; }
+            if (a.length < 8) { msg.textContent = 'パスワードは8文字以上にしてください。'; return; }
+            if (a === cur) { msg.textContent = '今のパスワードとは別のパスワードにしてください。'; return; }
+            if (a.toLowerCase() === String(activeAccount.userId || '').toLowerCase()) { msg.textContent = 'ユーザーIDと同じ文字列は使えません。'; return; }
+            if (a !== $('selfNewPwConfirm').value) { msg.textContent = '確認用のパスワードが一致しません。'; return; }
+            if (!await showConfirm('パスワードを変更します。変更後の1週間は、もう一度変更することはできません。よろしいですか？', 'パスワードの変更')) return;
+            $('saveSelfPw').disabled = true;
+            showLoading('パスワードを変更しています…');
+            try {
+                const user = auth.currentUser;
+                try { await user.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(user.email, cur)); }
+                catch { msg.textContent = '今のパスワードが違います。'; $('saveSelfPw').disabled = false; return; }
+                try { await db.collection('users').doc(user.uid).update({ mustChange: false, pwChangedAt: firebase.firestore.FieldValue.serverTimestamp() }); }
+                catch { msg.textContent = '変更できませんでした。前回の変更から1週間たっていない可能性があります。'; return; }
+                activeAccount.pwChangedAt = Date.now();
+                try { await user.updatePassword(a); }
+                catch { msg.textContent = 'パスワードを変更できませんでした。先生に連絡してください。'; return; }
+            } finally {
+                hideLoading();
+            }
+            await showAlert('パスワードを変更しました。1週間は、もう一度変更できません。', '変更しました');
+            showAppChooser();
+        };
+
         function showRoleChooser() {
             hideViews();
             document.body.classList.add('auth-mode');
@@ -1306,7 +1372,6 @@
             const url = (window.ADMIN_PAGE_URL || '').trim();
             if (url) window.open(url, '_blank', 'noopener');
         };
-        $('chooserLogout').onclick = showLogin;
         document.addEventListener('click', (event) => {
             if (event.target.closest('[data-to-chooser]')) showRoleChooser();
             if (event.target.closest('[data-to-apps]')) showAppChooser();
@@ -1899,7 +1964,6 @@
         $('teacherDashboard').addEventListener('click', (event) => {
             if (event.target.closest('[data-teacher-menu]')) showTeacherMenu();
         });
-        $('teacherMenuLogout').addEventListener('click', showLogin);
         $('refreshTeacherRecords').addEventListener('click', renderTeacherRecords);
         $('teacherQuestionList').addEventListener('click', async (event) => {
             const button = event.target.closest('[data-delete-set]');
@@ -1996,8 +2060,6 @@
             renderTeacherQuestions();
         };
 
-        $('logoutButton').onclick = showLogin;
-        $('teacherLogoutButton').onclick = showLogin;
         $('again').onclick = () => {
             hideViews();
             $('profile').classList.remove('hidden');

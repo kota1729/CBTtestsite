@@ -35,16 +35,13 @@
     <div class="window" id="subject-screen">
         <div class="user-status-bar">
             <span>ログイン中: <strong id="display-username-subject">--</strong></span>
-            <button onclick="handleLogout()"
-                style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold;">ログアウト</button>
         </div>
         <h1>教科を選択してください</h1>
         <p class="subtitle">学習する教科を選んでください。</p>
 
         <div id="subject-list"></div>
 
-        <button class="btn btn-sub" onclick="backToSiteMenu()"
-            style="width:100%; margin-top:20px; font-size:12px; padding:10px; border: 1px solid #ccc;">
+        <button class="btn btn-nav" onclick="backToSiteMenu()">
             CBT・I1の選択に戻る
         </button>
     </div>
@@ -52,8 +49,6 @@
     <div class="window" id="menu-screen">
         <div class="user-status-bar">
             <span>ログイン中: <strong id="display-username">--</strong></span>
-            <button onclick="handleLogout()"
-                style="background:none; border:none; color:var(--accent); cursor:pointer; font-weight:bold;">ログアウト</button>
         </div>
         <h1><span id="menu-subject-name">--</span> クイズメニュー</h1>
         <p class="subtitle">自分のやるモードを選んでください。</p>
@@ -71,24 +66,16 @@
             <span style="background:#f1c40f; color:#333;">★ 限定</span> わからない問題（★）だけを解く
         </button>
 
-        <button class="btn btn-sub" onclick="showSubjectScreen()"
-            style="width:100%; margin-top:20px; font-size:12px; padding:10px; border: 1px solid #ccc;">
-            他の教科を選びなおす
+        <button class="btn btn-nav" onclick="showSubjectScreen()">
+            ← 他の教科を選びなおす
         </button>
 
-        <button class="btn btn-sub" id="reset-stars-btn" onclick="resetMyStars()"
-            style="width:100%; margin-top:10px; font-size:12px; padding:10px; border: 1px solid #ccc;">
+        <button class="btn btn-tool" id="reset-stars-btn" onclick="resetMyStars()">
             自分の★（わからない問題）をこの教科分だけリセットする
         </button>
 
-        <button class="btn btn-sub" id="clear-memos-btn" onclick="clearMyMemos()"
-            style="width:100%; margin-top:10px; font-size:12px; padding:10px; border: 1px solid #ccc;">
+        <button class="btn btn-tool" id="clear-memos-btn" onclick="clearMyMemos()">
             自分のメモをこの教科分だけまとめて消去する
-        </button>
-
-        <button class="btn btn-danger" id="menu-change-password-btn" onclick="showChangePasswordScreen()"
-            style="width:100%; margin-top:10px; font-size:12px; padding:10px;">
-            パスワードを変更する
         </button>
     </div>
 
@@ -158,27 +145,6 @@
         <h1>終了お疲れ様でした！</h1>
         <p class="subtitle" style="font-size:15px; margin-bottom:20px;">範囲内の全問題をすべて解き終えました！</p>
         <button class="btn btn-main" onclick="toMainMenu()" style="width:100%;">メニュー画面に戻る</button>
-    </div>
-
-    <div class="window" id="change-password-screen">
-        <h1>パスワードの変更</h1>
-        <p class="subtitle">現在のパスワードと、新しいパスワードを入力してください。</p>
-        <div class="auth-form">
-            <div class="password-wrapper">
-                <input type="password" id="change-current-password" placeholder="現在のパスワード" autocomplete="off">
-                <button type="button" class="toggle-pw-btn"
-                    onclick="toggleChangePasswordVisibility(this, 'change-current-password')">表示</button>
-            </div>
-            <div class="password-wrapper">
-                <input type="password" id="change-new-password" placeholder="新しいパスワード（8文字以上）" autocomplete="off">
-                <button type="button" class="toggle-pw-btn"
-                    onclick="toggleChangePasswordVisibility(this, 'change-new-password')">表示</button>
-            </div>
-        </div>
-        <div class="control-btns" style="margin-bottom: 15px;">
-            <button class="btn btn-main" id="change-password-btn" onclick="handleChangeOwnPassword()">変更する</button>
-            <button class="btn btn-sub" onclick="toMainMenu()">戻る</button>
-        </div>
     </div>
 
     <script src="subjects/joho_shori.js"></script>
