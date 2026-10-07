@@ -1,0 +1,70 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isTeacher() { return signedIn() && request.auth.token.role == 'teacher'; }   // 先生と管理者
+    function me() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function isAdmin() { return signedIn() && me().role == 'admin'; }   // 管理者：全学年・全学科
+    // 先生：自分の学年・自分の学科（自分の生徒情報に書かれているもの）の分だけ
+    function sameClass(data) { return isTeacher() && data.grade == me().grade && data.className == me().className; }
+
+    match /users/{uid} {
+      // 自分の情報／管理者は全員分／先生は自分の学年・学科の分
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin() || sameClass(resource.data));
+      // 本人が書き換えられるのは「mustChange を false にする」ことだけ
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mustChange'])
+        && request.resource.data.mustChange == false;
+      allow create, delete: if false;
+    }
+
+    // 初期パスワードの記録：誰も読み書きできない（管理画面のサーバー側だけが扱う）
+    match /initialPasswords/{id} {
+      allow read, write: if false;
+    }
+
+    // テンプレート（管理画面で作る問題のもと）：先生だけが読める。書き込みは管理画面(Apps Script)だけ
+    match /templates/{id} {
+      allow read: if isTeacher();
+      allow write: if false;
+    }
+
+    // 公開された問題セット：ログイン済みなら読める。先生が作成・削除できる（書き換えは不可）
+    match /questionSets/{setId} {
+      allow read: if signedIn();
+      allow create: if isTeacher() && request.resource.data.createdBy == request.auth.uid;
+      allow delete: if isTeacher();
+      allow update: if false;
+    }
+
+    // I1テスト対策の★とメモ：本人／管理者(全員分)／先生(自分の学年・学科の生徒の分)が読み書きできる
+    function userOf(uid) { return get(/databases/$(database)/documents/users/$(uid)).data; }
+    match /i1Data/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin() || sameClass(userOf(uid)));
+      allow create, update: if signedIn()
+        && request.resource.data.keys().hasOnly(['starred', 'memos'])
+        && (request.auth.uid == uid || isAdmin() || sameClass(userOf(uid)));
+      allow delete: if false;
+    }
+
+    // 受験記録：本人だけが、自分の分を1回ずつ追加できる（書き換えはできない。削除できるのは管理者と、自分の学年・学科の先生だけ）
+    match /results/{id} {
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['uid', 'userId', 'grade', 'className', 'attendanceNumber',
+             'setTitle', 'setId', 'subject', 'unit', 'mode', 'score', 'total', 'at', 'details'])
+        && (!('details' in request.resource.data) || (request.resource.data.details is list && request.resource.data.details.size() <= 1000))
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.userId == me().userId
+        && request.resource.data.grade == me().grade
+        && request.resource.data.className == me().className
+        && request.resource.data.attendanceNumber == me().attendanceNumber
+        && request.resource.data.score is int && request.resource.data.total is int
+        && request.resource.data.score >= 0 && request.resource.data.score <= request.resource.data.total
+        && request.resource.data.total >= 1 && request.resource.data.total <= 1000;
+      // 読めるのは、本人／管理者(全員分)／先生(自分の学年・学科の分だけ)
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin() || sameClass(resource.data));
+      allow update: if false;
+      allow delete: if signedIn() && (isAdmin() || sameClass(resource.data));
+    }
+  }
+}
