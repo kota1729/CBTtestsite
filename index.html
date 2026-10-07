@@ -631,6 +631,21 @@
         .auth-btns button { flex: 1; padding: 14px 10px; font-size: 14px; border-radius: 6px }
         .auth-msg { text-align: center; margin: 0 }
         @media(max-width:480px) { body.auth-mode .card { padding: 15px } .auth-title { font-size: 18px } .toggle-pw-btn { font-size: 11px; padding: 5px 8px } }
+    
+        /* ---- 仕上げ：少し手作り感のある見た目 ---- */
+        :root { --navy: #2b3a4a; --blue: #2f7d6d; --mint: #e6f2ec; --paper: #faf6ee; --line: #e3d9c6; --ink: #2d2a26; --muted: #7a7265; --accent: #e08a3c; }
+        body { font-family: "Hiragino Maru Gothic ProN", "Yu Gothic UI", Meiryo, sans-serif; background: var(--paper) radial-gradient(#e9dfcb 1px, transparent 1.2px) 0 0 / 22px 22px; }
+        .hero { background: var(--navy); border-radius: 22px 8px 22px 8px; position: relative; transform: rotate(-.4deg); box-shadow: 4px 5px 0 var(--accent); }
+        .hero h1 { letter-spacing: .02em; }
+        .hero h1::after { content: ""; display: block; width: 96px; height: 4px; margin-top: 8px; border-radius: 4px; background: var(--accent); transform: rotate(-1.2deg); }
+        .card { border-radius: 10px 18px 12px 16px; box-shadow: 2px 3px 0 #e3d9c6; }
+        .card:nth-of-type(even) { transform: rotate(.15deg); }
+        button { border-radius: 8px 12px 8px 12px; box-shadow: 0 2px 0 #1f5a4e; transition: transform .1s; }
+        button:hover { filter: none; transform: translateY(-1px); }
+        button:active { transform: translateY(1px); box-shadow: none; }
+        button:disabled { box-shadow: none; }
+        .app-dialog-card { border-radius: 14px 6px 14px 6px; }
+        .app-dialog-card .actions button { min-width: 120px; padding: 11px 20px; font-size: 15px; }
     </style>
 </head>
 
@@ -1051,7 +1066,10 @@
             if (code === 'auth/too-many-requests') return '失敗が続いたため一時的にロックされました。しばらくしてからやり直してください。';
             if (code === 'auth/network-request-failed') return 'ネットワークに接続できません。';
             if (code.startsWith('auth/')) return 'ユーザーIDまたはパスワードが違います。';
-            return 'ログインできませんでした。時間をおいてやり直すか、先生に連絡してください。';
+            if (code === 'permission-denied' || code === 'unavailable' || code === 'failed-precondition') {
+                return 'ログインはできましたが、データを読み込めませんでした。（コード: ' + code + '）先生に伝えてください。';
+            }
+            return 'ログインできませんでした。時間をおいてやり直すか、先生に連絡してください。（コード: ' + (code || (error && error.message) || '不明') + '）';
         }
 
         document.querySelectorAll('.toggle-pw-btn').forEach((btn) => {
@@ -1104,6 +1122,7 @@
                 }
                 await completeLogin(profile, config, { askSave: true });
             } catch (error) {
+                console.error('login failed', error);
                 $('loginMessage').textContent = loginErrorMessage(error);
             } finally {
                 signingIn = false;
