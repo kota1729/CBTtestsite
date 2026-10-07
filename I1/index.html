@@ -45,7 +45,7 @@
 
         <button class="btn btn-sub" onclick="backToSiteMenu()"
             style="width:100%; margin-top:20px; font-size:12px; padding:10px; border: 1px solid #ccc;">
-            サイトの選択に戻る（CBTテストへ）
+            CBT・I1の選択に戻る
         </button>
     </div>
 
@@ -69,11 +69,6 @@
         </button>
         <button class="menu-btn" onclick="startMode(4)" id="menu-star-btn" style="background: #27ae60;">
             <span style="background:#f1c40f; color:#333;">★ 限定</span> わからない問題（★）だけを解く
-        </button>
-
-        <button class="menu-btn" id="admin-panel-btn" onclick="showAdminScreen()"
-            style="display:none; background:#8e44ad;">
-            <span>管理</span> 生徒の★・メモの管理
         </button>
 
         <button class="btn btn-sub" onclick="showSubjectScreen()"
@@ -163,39 +158,6 @@
         <h1>終了お疲れ様でした！</h1>
         <p class="subtitle" style="font-size:15px; margin-bottom:20px;">範囲内の全問題をすべて解き終えました！</p>
         <button class="btn btn-main" onclick="toMainMenu()" style="width:100%;">メニュー画面に戻る</button>
-    </div>
-
-    <div class="window" id="admin-screen">
-        <h1>生徒の★・メモの管理</h1>
-        <p class="subtitle">現在の教科「<strong id="admin-subject-name">--</strong>」について、<span id="admin-scope">--</span>の★・メモを確認・リセットできます。</p>
-
-        <button class="btn btn-sub" onclick="showAdminScreen()" style="width:100%; margin-bottom:15px; font-size:13px;">
-            🔄 最新の状態に更新
-        </button>
-
-        <div style="max-height: 50vh; overflow-y: auto;">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th id="admin-th-who">出席番号</th>
-                        <th>★の数</th>
-                        <th>メモ</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody id="admin-user-list"></tbody>
-            </table>
-        </div>
-
-        <div class="admin-section" style="border-color: var(--accent);">
-            <h3 style="font-size:15px; color:var(--accent); margin-bottom:10px;">⭐ この教科の★（わからない問題）を一括リセット</h3>
-            <p style="font-size:12px; color:#7f8c8d; margin-bottom:10px;">現在選択中の教科のデータだけが対象です。他の教科の★は影響を受けません。</p>
-            <button class="btn btn-danger" onclick="adminResetAllUsersStars()">この教科の★データを一括リセットする</button>
-        </div>
-
-        <div class="nav-footer">
-            <button class="btn btn-sub" onclick="toMainMenu()" style="width:100%;">メニューへ戻る</button>
-        </div>
     </div>
 
     <div class="window" id="change-password-screen">

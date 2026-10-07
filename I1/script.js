@@ -71,8 +71,6 @@ function escapeHtml(str) {
 let currentUser = null;      // Firebase AuthのUID
 let currentUsername = null;  // 画面に出す名前（「1年 情報ビジネス科 5番さん」）
 let currentProfile = null;   // users/{uid} の内容
-let isManager = false;       // 先生または管理者
-let isAdminSession = false;  // 管理者（全学年・全学科）
 let currentSubject = null;
 let currentMode = 1;
 let activeQuestions = [];
@@ -109,8 +107,6 @@ async function startApp() {
             currentProfile = snap.data();
             currentUser = user.uid;
             currentUsername = nameLabel(currentProfile);
-            isManager = currentProfile.role === 'teacher' || currentProfile.role === 'admin';
-            isAdminSession = currentProfile.role === 'admin';
             resetSessionCache();
             await withTimeout(loadSessionData(), 10000, 'データの読み込みがタイムアウトしました。通信環境をご確認ください。');
             hideLoading();
@@ -312,8 +308,6 @@ async function handleLogout() {
     currentUser = null;
     currentUsername = null;
     currentProfile = null;
-    isManager = false;
-    isAdminSession = false;
     currentSubject = null;
     resetSessionCache();
     goLogin();
@@ -361,7 +355,7 @@ function showSubjectScreen() {
         list.innerHTML = `
             <div style="text-align:left; background:#fff3f3; border:1px solid #e74c3c; border-radius:8px; padding:15px; font-size:13px; line-height:1.7; color:#555;">
                 <strong style="color:var(--accent);">⚠️ 教科データを読み込めませんでした。</strong><br>
-                <code>i1/subjects</code> フォルダの中に、<code>joho_shori.js</code> などの教科ファイルが入っているか確認してください。
+                <code>I1/subjects</code> フォルダの中に、<code>joho_shori.js</code> などの教科ファイルが入っているか確認してください。
             </div>`;
         return;
     }
@@ -386,7 +380,6 @@ async function showMainMenu() {
     document.getElementById('display-username').innerText = currentUsername;
     document.getElementById('menu-subject-name').innerText = getSubjectName(currentSubject);
 
-    document.getElementById('admin-panel-btn').style.display = isManager ? 'block' : 'none';
 
     const starModeBtn = document.getElementById('menu-star-btn');
     const starCount = getSessionStars(currentSubject).length;
@@ -640,145 +633,6 @@ function toggleStarList(originalIdx, btnEl) {
         btnEl.classList.add('active');
     }
     setSessionStars(currentSubject, myStars);
-}
-
-// --- 先生・管理者：生徒の★・メモの管理 ---
-// 管理者は全員分、先生は自分の学年・学科の生徒だけ（Firestoreのルールでも同じ範囲に制限されている）
-const DEPT_ORDER = ['環境システム科', '電子情報技術科', '機械科', '情報ビジネス科', '総合ビジネス科'];
-const deptRank = (n) => { const i = DEPT_ORDER.indexOf(n); return i < 0 ? DEPT_ORDER.length : i; };
-
-async function loadScopeStudents() {
-    const q = isAdminSession
-        ? db.collection('users')
-        : db.collection('users').where('grade', '==', currentProfile.grade).where('className', '==', currentProfile.className);
-    const snap = await q.get();
-    const list = [];
-    snap.forEach(doc => {
-        const d = doc.data();
-        if (d.role === 'student') list.push({ uid: doc.id, ...d });
-    });
-    list.sort((a, b) =>
-        String(a.grade || '').localeCompare(String(b.grade || ''), 'ja') ||
-        (deptRank(a.className) - deptRank(b.className)) ||
-        String(a.className || '').localeCompare(String(b.className || ''), 'ja') ||
-        (Number(a.attendanceNumber) || 0) - (Number(b.attendanceNumber) || 0));
-    return list;
-}
-
-async function showAdminScreen() {
-    if (!isManager) return;
-    document.querySelectorAll('.window').forEach(el => el.style.display = 'none');
-    document.getElementById('admin-screen').style.display = 'block';
-    document.getElementById('admin-subject-name').innerText = getSubjectName(currentSubject);
-    document.getElementById('admin-scope').innerText = isAdminSession ? '全学年・全学科' : `${currentProfile.grade} ${currentProfile.className}`;
-    document.getElementById('admin-th-who').innerText = isAdminSession ? '学年・学科・出席番号' : '出席番号';
-
-    const tbody = document.getElementById('admin-user-list');
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#aaa;">読み込み中...</td></tr>';
-
-    try {
-        const students = await loadScopeStudents();
-        if (students.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#aaa;">登録されている生徒はいません。</td></tr>';
-            return;
-        }
-        const datas = [];
-        for (let i = 0; i < students.length; i += 20) {
-            const part = await Promise.all(students.slice(i, i + 20).map(s => dataRef(s.uid).get()));
-            part.forEach(d => datas.push(d.exists ? d.data() : {}));
-        }
-        tbody.innerHTML = '';
-        students.forEach((s, i) => {
-            const d = datas[i] || {};
-            const stars = (d.starred && d.starred[currentSubject]) || [];
-            const memos = (d.memos && d.memos[currentSubject]) || {};
-            const memoCount = Object.values(memos).filter(t => String(t || '').trim()).length;
-            const num = `${Number(s.attendanceNumber) || s.attendanceNumber || '--'}番`;
-            const who = isAdminSession ? `${escapeHtml(s.grade || '')} ${escapeHtml(s.className || '')} ${num}` : num;
-            const label = escapeHtml(nameLabel(s));
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${who}</td>
-                <td>${stars.length} 問</td>
-                <td>${memoCount} 件</td>
-                <td>
-                    <button class="btn btn-sub" style="padding:5px 8px; font-size:11px; margin-bottom:4px;" data-act="stars" data-uid="${escapeHtml(s.uid)}" data-label="${label}">★リセット</button>
-                    <button class="btn btn-sub" style="padding:5px 8px; font-size:11px;" data-act="memos" data-uid="${escapeHtml(s.uid)}" data-label="${label}">メモ消去</button>
-                </td>`;
-            tbody.appendChild(tr);
-        });
-    } catch (error) {
-        console.error(error);
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#aaa;">読み込みに失敗しました（Firestoreのルールが更新されているか確認してください）。</td></tr>';
-    }
-}
-
-document.getElementById('admin-user-list').addEventListener('click', (event) => {
-    const btn = event.target.closest('button[data-act]');
-    if (!btn) return;
-    if (btn.dataset.act === 'stars') adminResetUserStars(btn.dataset.uid, btn.dataset.label);
-    else adminClearUserMemos(btn.dataset.uid, btn.dataset.label);
-});
-
-async function adminResetUserStars(uid, label) {
-    if (!isManager) return;
-    const subjectName = getSubjectName(currentSubject);
-    const confirmed = await showCustomConfirm(`「${label}」の教科「${subjectName}」の★データだけをリセットします。他の教科・他の人には影響しません。よろしいですか？`, '★リセット');
-    if (!confirmed) return;
-    showLoading('リセット中...');
-    try {
-        await dataRef(uid).set({ starred: { [currentSubject]: [] } }, { merge: true });
-        if (uid === currentUser) sessionStars[currentSubject] = [];
-        hideLoading();
-        await showCustomAlert(`「${label}」の★データ（${subjectName}）をリセットしました。`, 'リセット完了');
-        await showAdminScreen();
-    } catch (error) {
-        hideLoading();
-        console.error(error);
-        await showCustomAlert('リセットに失敗しました。', 'エラー');
-    }
-}
-
-async function adminClearUserMemos(uid, label) {
-    if (!isManager) return;
-    const subjectName = getSubjectName(currentSubject);
-    const confirmed = await showCustomConfirm(`「${label}」の教科「${subjectName}」のメモを、すべてまとめて消去します。この操作は取り消せません。よろしいですか？`, 'メモ全消去');
-    if (!confirmed) return;
-    showLoading('消去中...');
-    try {
-        await dataRef(uid).set({ memos: { [currentSubject]: {} } }, { merge: true });
-        if (uid === currentUser) sessionMemos[currentSubject] = {};
-        hideLoading();
-        await showCustomAlert(`「${label}」のメモ（${subjectName}）をすべて消去しました。`, '消去完了');
-        await showAdminScreen();
-    } catch (error) {
-        hideLoading();
-        console.error(error);
-        await showCustomAlert('消去に失敗しました。', 'エラー');
-    }
-}
-
-async function adminResetAllUsersStars() {
-    if (!isManager) return;
-    const subjectName = getSubjectName(currentSubject);
-    const scope = isAdminSession ? '全学年・全学科' : `${currentProfile.grade} ${currentProfile.className}`;
-    const confirmed = await showCustomConfirm(`【警告】現在の教科「${subjectName}」について、${scope}の生徒の★データをすべてリセットします。他の教科の★には影響しません。本当によろしいですか？`, '★の一括リセット');
-    if (!confirmed) return;
-    showLoading('リセット中...');
-    try {
-        const students = await loadScopeStudents();
-        for (let i = 0; i < students.length; i += 20) {
-            await Promise.all(students.slice(i, i + 20).map(s =>
-                dataRef(s.uid).set({ starred: { [currentSubject]: [] } }, { merge: true })));
-        }
-        hideLoading();
-        await showCustomAlert(`${students.length}人の★データ（${subjectName}）をリセットしました。`, '一括リセット完了');
-        await showAdminScreen();
-    } catch (error) {
-        hideLoading();
-        console.error(error);
-        await showCustomAlert('一括リセットに失敗しました。', 'エラー');
-    }
 }
 
 // --- キーボード操作（クイズ画面：→次、←前、Enterで答え） ---

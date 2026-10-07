@@ -37,13 +37,11 @@ service cloud.firestore {
       allow update: if false;
     }
 
-    // I1テスト対策の★とメモ：本人／管理者(全員分)／先生(自分の学年・学科の生徒の分)が読み書きできる
-    function userOf(uid) { return get(/databases/$(database)/documents/users/$(uid)).data; }
+    // I1テスト対策の★とメモ：本人だけが自分の分を読み書きできる（先生・管理者の確認とリセットは、管理画面（Apps Script）が行う）
     match /i1Data/{uid} {
-      allow read: if signedIn() && (request.auth.uid == uid || isAdmin() || sameClass(userOf(uid)));
-      allow create, update: if signedIn()
-        && request.resource.data.keys().hasOnly(['starred', 'memos'])
-        && (request.auth.uid == uid || isAdmin() || sameClass(userOf(uid)));
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['starred', 'memos']);
       allow delete: if false;
     }
 

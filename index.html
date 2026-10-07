@@ -684,7 +684,7 @@
             <p class="muted auth-msg" id="pwChangeMessage" role="status"></p>
         </section>
         <section class="card hidden" id="appChooser">
-            <h1 class="auth-title">どちらを使いますか？</h1>
+            <h1 class="auth-title">CBTとI1、どちらを使いますか？</h1>
             <p class="auth-sub" id="appChooserWho"></p>
             <div class="auth-form">
                 <button type="button" id="chooseCbt">CBTテスト（小テスト）</button>
@@ -693,7 +693,7 @@
             <div class="auth-btns"><button class="danger" type="button" id="appChooserLogout">ログアウト</button></div>
         </section>
         <section class="card hidden" id="roleChooser">
-            <h1 class="auth-title">どの画面を開きますか？</h1>
+            <h1 class="auth-title">CBTテスト：どの画面を開きますか？</h1>
             <p class="auth-sub" id="roleChooserWho"></p>
             <div class="auth-form">
                 <button type="button" id="chooseTeacher">先生画面（問題の公開・生徒の記録）</button>
@@ -701,15 +701,15 @@
                 <button type="button" id="chooseAdmin">管理画面（生徒の登録・パスワード・問題テンプレート）</button>
             </div>
             <p class="muted auth-msg" id="chooserMessage" role="status"></p>
-            <div class="auth-btns"><button class="secondary" type="button" data-to-apps>サイトの選択へ戻る</button><button class="danger" type="button" id="chooserLogout">ログアウト</button></div>
+            <div class="auth-btns"><button class="secondary" type="button" data-to-apps>CBT・I1の選択に戻る</button><button class="danger" type="button" id="chooserLogout">ログアウト</button></div>
         </section>
         <section class="card hidden" id="profile">
             <h2 class="section-title">小テスト</h2>
             <p id="signedInStudent" class="muted">ログイン中</p>
             <h3>実施できる問題セット</h3>
             <div id="questionSetList" class="question-set-list" aria-label="実施できる問題セット"></div>
-            <div class="actions"><button class="secondary" id="showTeacher">結果一覧</button><button class="secondary" type="button" data-to-apps>サイトの選択へ戻る</button><button class="secondary hidden admin-only"
-                    type="button" data-to-chooser>画面の選択へ戻る</button><button class="danger"
+            <div class="actions"><button class="secondary" id="showTeacher">結果一覧</button><button class="secondary" type="button" data-to-apps>CBT・I1の選択に戻る</button><button class="secondary hidden admin-only"
+                    type="button" data-to-chooser>先生・生徒・管理の選択に戻る</button><button class="danger"
                     id="logoutButton">ログアウト</button></div>
         </section>
         <section class="card hidden" id="teacherDashboard">
@@ -725,7 +725,7 @@
                 <button class="question-set-card" type="button" data-teacher-view="current"><span
                         class="question-set-title">現在作っている問題</span><span class="question-set-action">問題セット一覧を開く
                         →</span></button>
-                <div class="actions"><button class="secondary hidden admin-only" type="button" data-to-chooser>画面の選択へ戻る</button><button class="secondary" type="button" data-to-apps>サイトの選択へ戻る</button><button class="danger" type="button" id="teacherMenuLogout">ログアウト</button></div>
+                <div class="actions"><button class="secondary hidden admin-only" type="button" data-to-chooser>先生・生徒・管理の選択に戻る</button><button class="secondary" type="button" data-to-apps>CBT・I1の選択に戻る</button><button class="danger" type="button" id="teacherMenuLogout">ログアウト</button></div>
             </div>
             <section class="hidden" id="teacherCreatePanel">
                 <div class="actions"><button class="secondary" type="button" data-teacher-menu>先生メニューへ戻る</button></div>
@@ -1099,6 +1099,7 @@
             }
             $('loginButton').disabled = true;
             signingIn = true;
+            showLoading('ログインしています…');
             try {
                 const { user } = await auth.signInWithEmailAndPassword(toEmail(userId), password);
                 const snap = await db.collection('users').doc(user.uid).get();
@@ -1126,6 +1127,7 @@
                 $('loginMessage').textContent = loginErrorMessage(error);
             } finally {
                 signingIn = false;
+                hideLoading();
                 $('loginButton').disabled = false;
             }
         };
@@ -1139,6 +1141,7 @@
             if (a === m.password) { msg.textContent = '初期パスワードとは別のパスワードにしてください。'; return; }
             if (a !== $('newPasswordConfirm').value) { msg.textContent = '確認用のパスワードが一致しません。'; return; }
             $('savePassword').disabled = true;
+            showLoading('パスワードを変更しています…');
             try {
                 await m.user.updatePassword(a);
                 await db.collection('users').doc(m.user.uid).update({ mustChange: false });
@@ -1146,6 +1149,7 @@
                 msg.textContent = 'パスワードを変更できませんでした。もう一度ログインしてやり直してください。';
                 return;
             } finally {
+                hideLoading();
                 $('savePassword').disabled = false;
             }
             pendingMatch = null;
@@ -1162,6 +1166,7 @@
                 'パスワード設定をスキップ'
             );
             if (!ok) { $('newPassword').focus(); return; }
+            showLoading('設定しています…');
             try {
                 await db.collection('users').doc(m.user.uid).update({ mustChange: false });
                 pendingMatch = null;
@@ -1171,7 +1176,7 @@
                 await completeLogin(m.profile, m.config, { askSave: true });
             } catch (e) {
                 await showAlert('初回設定の完了に失敗しました。もう一度お試しください。', 'ログインできません');
-            }
+            } finally { hideLoading(); }
         };
 
         async function completeLogin(profile, config, options = {}) {
@@ -1257,7 +1262,7 @@
             else if (activeAccount.role === 'teacher') await enterTeacher();
             else enterStudent();
         }
-        $('chooseCbt').onclick = () => { $('chooseCbt').disabled = true; enterCbt().finally(() => { $('chooseCbt').disabled = false; }); };
+        $('chooseCbt').onclick = () => { $('chooseCbt').disabled = true; showLoading('読み込み中…'); enterCbt().finally(() => { hideLoading(); $('chooseCbt').disabled = false; }); };
         $('chooseI1').onclick = () => { location.href = './I1/'; };
         $('appChooserLogout').onclick = showLogin;
 
@@ -1295,7 +1300,7 @@
             populateStudentQuestionSets();
         }
 
-        $('chooseTeacher').onclick = () => { $('chooseTeacher').disabled = true; enterTeacher().finally(() => { $('chooseTeacher').disabled = false; }); };
+        $('chooseTeacher').onclick = () => { $('chooseTeacher').disabled = true; showLoading('読み込み中…'); enterTeacher().finally(() => { hideLoading(); $('chooseTeacher').disabled = false; }); };
         $('chooseStudent').onclick = enterStudent;
         $('chooseAdmin').onclick = () => {
             const url = (window.ADMIN_PAGE_URL || '').trim();
@@ -1589,6 +1594,7 @@
                 })),
             };
             if (!db || !rec.uid) { status.textContent = '記録を先生に送れませんでした（ログイン状態を確認してください）。'; return; }
+            setInlineLoading(status, '記録を先生に送っています…');
             db.collection('results').add(rec)
                 .then(() => { status.textContent = '記録を先生に送りました。'; })
                 .catch(() => { status.textContent = '記録を先生に送れませんでした。電波の良いところでもう一度解くか、先生に伝えてください。'; });
@@ -1812,7 +1818,7 @@
             const scope = activeAccount.role === 'admin' ? '全学年・全学科' : `${activeAccount.grade} ${activeAccount.className}`;
             if (!await showConfirm(`${scope}の生徒の記録 ${list.length}件を、すべて削除します。元に戻せません。よろしいですか？`, '記録を削除')) return;
             $('deleteAllRecords').disabled = true;
-            info.textContent = '削除中…';
+            setInlineLoading(info, '削除中…');
             try {
                 for (let i = 0; i < list.length; i += 20) {
                     await Promise.all(list.slice(i, i + 20).map((r) => db.collection('results').doc(r._id).delete()));
@@ -1900,6 +1906,7 @@
             if (!button) return;
             if (!await showConfirm(`「${button.dataset.deleteTitle}」を削除します。生徒の画面からも消えます。よろしいですか？`, '問題セットを削除')) return;
             button.disabled = true;
+            showLoading('削除しています…');
             try {
                 await db.collection('questionSets').doc(button.dataset.deleteSet).delete();
                 remoteQuestions = await loadRemoteQuestions();
@@ -1907,7 +1914,7 @@
             } catch {
                 button.disabled = false;
                 await showAlert('削除できませんでした。もう一度試してください。', '削除できませんでした');
-            }
+            } finally { hideLoading(); }
         });
 
         $('questionForm').onsubmit = async (event) => {
@@ -1965,6 +1972,7 @@
             };
             const submitButton = $('questionForm').querySelector('button[type="submit"]');
             submitButton.disabled = true;
+            showLoading('公開しています…');
             try {
                 await db.collection('questionSets').add(doc);
                 remoteQuestions = await loadRemoteQuestions();
@@ -1972,6 +1980,7 @@
                 $('authorMessage').textContent = '保存できませんでした。通信とFirestoreのルール（更新済みか）を確認してください。';
                 return;
             } finally {
+                hideLoading();
                 submitButton.disabled = false;
             }
             const scheduleLabel = $('releaseMode').value === 'now' ? '公開しました' : `公開予約しました（${new Date(releaseAt).toLocaleString('ja-JP')}）`;
