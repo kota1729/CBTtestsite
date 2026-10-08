@@ -211,6 +211,11 @@ h1 {
     flex: 1;
 }
 
+.question-keyword {
+    color: #d23b47;
+    font-weight: 700;
+}
+
 .q-image {
     display: block;
     width: 100%;

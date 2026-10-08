@@ -393,7 +393,7 @@ async function showQuestion() {
     const container = document.getElementById('quiz-a-container');
     container.classList.remove('revealed');
 
-    document.getElementById('quiz-question').innerText = current.q;
+    document.getElementById('quiz-question').innerHTML = formatQuestionText(current.q);
     document.getElementById('quiz-answer').innerText = current.a;
 
     const imgEl = document.getElementById('quiz-question-img');
@@ -428,6 +428,19 @@ async function showQuestion() {
     document.getElementById('quiz-count').innerText = `第 ${currentIndex + 1} 問 / ${total} 問`;
     document.getElementById('quiz-progress').style.width = `${(currentIndex / total) * 100}%`;
     document.getElementById('prev-btn').disabled = (currentIndex === 0);
+}
+
+// [[...]] で囲まれた語句だけを、教材の赤字として安全に表示する。
+function formatQuestionText(question) {
+    return String(question)
+        .split(/(\[\[[\s\S]*?\]\])/g)
+        .map(part => {
+            if (part.startsWith('[[') && part.endsWith(']]')) {
+                return `<span class="question-keyword">${escapeHtml(part.slice(2, -2))}</span>`;
+            }
+            return escapeHtml(part);
+        })
+        .join('');
 }
 
 function toggleMemoVisibility() {
@@ -528,7 +541,7 @@ async function setupListScreen() {
         return `
             <div class="qa-card">
                 <div class="card-header">
-                    <div class="q-text">問 ${idx + 1}: ${escapeHtml(item.q)}</div>
+                    <div class="q-text">問 ${idx + 1}: ${formatQuestionText(item.q)}</div>
                     <button class="star-btn ${isStarred ? 'active' : ''}" onclick="toggleStarList(${idx}, this)">★</button>
                 </div>
                 ${item.img ? `<img src="${escapeHtml(item.img)}" class="q-image" alt="問題の画像">` : ''}
