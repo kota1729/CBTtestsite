@@ -729,8 +729,7 @@
             <p id="signedInStudent" class="muted">ログイン中</p>
             <h3>実施できる問題セット</h3>
             <div id="questionSetList" class="question-set-list" aria-label="実施できる問題セット"></div>
-            <div class="actions"><button class="secondary" id="showTeacher">結果一覧</button><button class="secondary" type="button" data-to-apps>CBT・I1の選択に戻る</button><button class="secondary hidden admin-only"
-                    type="button" data-to-chooser>先生・生徒・管理の選択に戻る</button></div>
+            <div class="actions"><button class="secondary" id="showTeacher">結果一覧</button><button class="secondary" type="button" data-to-prev>CBT・I1の選択に戻る</button></div>
         </section>
         <section class="card hidden" id="teacherDashboard">
             <h2 class="section-title">先生用：問題作成</h2>
@@ -745,7 +744,7 @@
                 <button class="question-set-card" type="button" data-teacher-view="current"><span
                         class="question-set-title">現在作っている問題</span><span class="question-set-action">問題セット一覧を開く
                         →</span></button>
-                <div class="actions"><button class="secondary hidden admin-only" type="button" data-to-chooser>先生・生徒・管理の選択に戻る</button><button class="secondary" type="button" data-to-apps>CBT・I1の選択に戻る</button></div>
+                <div class="actions"><button class="secondary" type="button" data-to-prev>CBT・I1の選択に戻る</button></div>
             </div>
             <section class="hidden" id="teacherCreatePanel">
                 <div class="actions"><button class="secondary" type="button" data-teacher-menu>先生メニューへ戻る</button></div>
@@ -826,11 +825,12 @@
             </section>
         </section>
         <section class="card hidden" id="quiz">
+            <h2 class="section-title" id="quizUnit"></h2>
             <div id="singleMode">
-                <div class="qhead"><span id="progress">問題 1 / 10</span><span class="pill" id="category"></span></div>
+                <div class="qhead"><span id="progress">問題 1 / 10</span></div>
                 <div class="question" id="prompt"></div>
                 <div class="choices" id="choices"></div>
-                <div class="actions"><button class="secondary" id="prevQ" type="button">← 前の問題</button><button id="next">回答する</button><button class="secondary" id="quit">中断</button>
+                <div class="actions"><button class="secondary" id="prevQ" type="button">← 前の問題</button><button id="next">回答する</button><button class="secondary" id="gradeNow" type="button">ここまでで採点する</button><button class="secondary" id="quit">中断</button>
                 </div>
                 <p class="muted" id="quizMessage"></p>
             </div>
@@ -842,13 +842,13 @@
                     <h3>共通の選択肢</h3>
                     <ol id="choicePool" class="choice-pool"></ol>
                 </section>
-                <div class="actions"><button id="submitBatch">まとめて採点</button><button class="secondary"
+                <div class="actions"><button id="submitBatch">ここまでで採点する</button><button class="secondary"
                         id="quitBatch">中断</button></div>
                 <p class="muted" id="batchMessage"></p>
             </div>
         </section>
         <section class="card hidden" id="result">
-            <h2 class="section-title">今回の結果</h2>
+            <h2 class="section-title" id="resultUnit">今回の結果</h2>
             <div class="score" id="score"></div>
             <p class="muted" id="saveStatus" role="status"></p>
             <div id="feedback"></div>
@@ -1245,6 +1245,7 @@
             try {
                 $('passwordInput').value = '';
                 document.querySelectorAll('.admin-only').forEach((el) => el.classList.toggle('hidden', profile.role !== 'admin'));
+                document.querySelectorAll('[data-to-prev]').forEach((el) => { el.textContent = profile.role === 'admin' ? '先生・生徒・管理の選択に戻る' : 'CBT・I1の選択に戻る'; });
                 showAppChooser();
             } finally {
                 hideLoading();
@@ -1399,7 +1400,7 @@
             if (url) window.open(url, '_blank', 'noopener');
         };
         document.addEventListener('click', (event) => {
-            if (event.target.closest('[data-to-chooser]')) showRoleChooser();
+            if (event.target.closest('[data-to-prev]')) { if (activeAccount && activeAccount.role === 'admin') showRoleChooser(); else showAppChooser(); }
             if (event.target.closest('[data-to-apps]')) showAppChooser();
         });
 
@@ -1472,6 +1473,8 @@
             questionIndex = 0;
             $('profile').classList.add('hidden');
             $('quiz').classList.remove('hidden');
+            $('quizUnit').textContent = selectedQuestionSet.unit || selectedQuestionSet.title || '';
+            $('resultUnit').textContent = (selectedQuestionSet.unit || selectedQuestionSet.title) ? `${selectedQuestionSet.unit || selectedQuestionSet.title}：今回の結果` : '今回の結果';
 
             if (questionMode === 'single') {
                 $('singleMode').classList.remove('hidden');
@@ -1501,7 +1504,6 @@
             const options = singleOptions[questionIndex];
             const previous = userAnswers[questionIndex];
             $('progress').textContent = `問題 ${questionIndex + 1} / ${questions.length}`;
-            $('category').textContent = question.c;
             $('prompt').textContent = question.q;
             $('quizMessage').textContent = '';
             $('choices').innerHTML = options.map((option, index) => `
@@ -1511,7 +1513,7 @@
                 </label>
             `).join('');
             $('next').textContent = questionIndex === questions.length - 1 ? '採点する' : '回答する';
-            $('prevQ').disabled = questionIndex === 0;
+            $('prevQ').classList.toggle('hidden', questionIndex === 0);
         }
 
         $('next').onclick = () => {
@@ -1558,7 +1560,6 @@
                     <article class="batch-item">
                         <div class="batch-item-heading">
                             <strong>${index + 1}. ${escapeHtml(question.q)}</strong>
-                            <span class="pill">${escapeHtml(question.c)}</span>
                         </div>
                         <input class="answer-input" type="text" data-answer-index="${index}" autocomplete="off" placeholder="回答を入力">
                     </article>
@@ -1627,26 +1628,44 @@
             document.querySelectorAll('.number-picker-toggle').forEach((button) => button.setAttribute('aria-expanded', 'false'));
         });
 
-        $('submitBatch').onclick = () => {
-            if (questionMode === 'fill') {
-                const inputs = [...document.querySelectorAll('.answer-input')];
-                if (inputs.some((input) => !input.value.trim())) {
-                    $('batchMessage').textContent = 'すべての問題に回答を入力してください。';
-                    return;
-                }
-                userAnswers = inputs.map((input) => input.value.trim());
-                answers = inputs.map((input, index) => isFillCorrect(input.value, questions[index].a[questions[index].k]));
-            } else {
-                if (selectedChoiceNumbers.some((index) => index === null || index < 0)) {
-                    $('batchMessage').textContent = 'すべての問題で、選択肢番号を選んでください。';
-                    return;
-                }
-                userAnswers = selectedChoiceNumbers.map((selectedIndex) => sharedChoicePool[selectedIndex]);
-                answers = selectedChoiceNumbers.map((selectedIndex, index) => (
-                    normalizeAnswer(sharedChoicePool[selectedIndex]) === normalizeAnswer(questions[index].a[questions[index].k])
-                ));
-            }
+        // 途中までの採点：答えた問題だけを採点する（どの問題タイプでも同じ）。答えていない問題は採点に入らない
+        async function gradeAnswered(items) {   // items: [{ index, text, ok }]
+            if (!items.length) return false;
+            const left = questions.length - items.length;
+            if (left > 0 && !await showConfirm(`まだ答えていない${left}問は、採点に入りません。ここまでの${items.length}問を採点しますか？`, 'ここまでで採点')) return false;
+            questions = items.map((it) => questions[it.index]);
+            userAnswers = items.map((it) => it.text);
+            answers = items.map((it) => it.ok);
             finishQuiz();
+            return true;
+        }
+
+        $('submitBatch').onclick = async () => {
+            const items = [];
+            if (questionMode === 'fill') {
+                [...document.querySelectorAll('.answer-input')].forEach((input, index) => {
+                    if (input.value.trim()) items.push({ index, text: input.value.trim(), ok: isFillCorrect(input.value, questions[index].a[questions[index].k]) });
+                });
+            } else {
+                selectedChoiceNumbers.forEach((selectedIndex, index) => {
+                    if (selectedIndex === null || selectedIndex < 0) return;
+                    items.push({ index, text: sharedChoicePool[selectedIndex], ok: normalizeAnswer(sharedChoicePool[selectedIndex]) === normalizeAnswer(questions[index].a[questions[index].k]) });
+                });
+            }
+            if (!items.length) { $('batchMessage').textContent = '1問以上、答えを入力・選択してください。'; return; }
+            $('batchMessage').textContent = '';
+            await gradeAnswered(items);
+        };
+
+        $('gradeNow').onclick = async () => {
+            const items = [];
+            answers.forEach((ok, index) => { if (ok !== undefined && index !== questionIndex) items.push({ index, text: userAnswers[index], ok }); });
+            const selected = document.querySelector('input[name="singleAnswer"]:checked');
+            if (selected) items.push({ index: questionIndex, text: selected.dataset.text, ok: selected.value === '1' });
+            items.sort((x, y) => x.index - y.index);
+            if (!items.length) { $('quizMessage').textContent = '1問以上、答えを選んでください。'; return; }
+            $('quizMessage').textContent = '';
+            await gradeAnswered(items);
         };
 
         function normalizeAnswer(value) {
@@ -1671,7 +1690,7 @@
             $('score').textContent = `${correctCount} / ${questions.length} 問正解`;
             $('feedback').innerHTML = questions.map((question, index) => `
                 <div class="feedback ${answers[index] ? 'good' : 'bad'}">
-                    <b>${index + 1}. ${answers[index] ? '正解' : '不正解'}：${escapeHtml(question.c)}</b>
+                    <b>${index + 1}. ${answers[index] ? '正解' : '不正解'}</b>
                     <div>あなたの答え：${escapeHtml(userAnswers[index] || '')}</div>
                     <div>正解：${escapeHtml(question.a[question.k])}</div>
                 </div>
