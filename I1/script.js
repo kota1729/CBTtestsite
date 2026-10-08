@@ -8,17 +8,21 @@ let db = null;
 // --- 処理中オーバーレイ / トースト通知 ---
 let loadingDepth = 0;
 let loadingStuckTimer = null;
+let loadingShowTimer = null;
+const LOADING_DELAY_MS = 300;   // 一瞬で終わるときは出さない（CBTのページと同じ決まり）
 const LOADING_STUCK_HINT_MS = 7000;
 
-function showLoading(text = '処理中...') {
+function showLoading(text = '処理中...', immediate = false) {
     loadingDepth++;
     document.getElementById('loading-overlay-text').innerText = text;
-    document.getElementById('loading-overlay').classList.add('active');
-    armLoadingStuckTimer();
+    const show = () => { document.getElementById('loading-overlay').classList.add('active'); armLoadingStuckTimer(); };
+    clearTimeout(loadingShowTimer);
+    if (immediate) show(); else loadingShowTimer = setTimeout(show, LOADING_DELAY_MS);
 }
 function hideLoading() {
     loadingDepth = Math.max(0, loadingDepth - 1);
     if (loadingDepth === 0) {
+        clearTimeout(loadingShowTimer);
         document.getElementById('loading-overlay').classList.remove('active');
         disarmLoadingStuckTimer();
     }
@@ -85,7 +89,7 @@ function nameLabel(p) {
 }
 
 function goLogin() { location.replace('../'); }
-function backToSiteMenu() { showLoading('読み込み中…'); location.href = '../#menu'; }
+function backToSiteMenu() { showLoading('読み込み中…', true); location.href = '../#menu'; }
 
 async function startApp() {
     const cfg = window.FIREBASE_CONFIG;
@@ -93,6 +97,7 @@ async function startApp() {
         goLogin();
         return;
     }
+    showLoading('読み込み中…');
     if (!firebase.apps.length) firebase.initializeApp(cfg);
     auth = firebase.auth();
     db = firebase.firestore();
@@ -104,9 +109,16 @@ async function startApp() {
         if (started) return;
         started = true;
         try {
-            const snap = await withTimeout(db.collection('users').doc(user.uid).get(), 10000, 'タイムアウト');
-            if (!snap.exists || snap.data().mustChange) { goLogin(); return; }
-            currentProfile = snap.data();
+            // CBTのページで読んだログイン情報があれば、それを使う（このタブで、もう一度読み込まない）
+            let cached = null;
+            try { const c = JSON.parse(sessionStorage.getItem('cbt_profile') || 'null'); if (c && c.uid === user.uid && c.profile) cached = c.profile; } catch (e) { cached = null; }
+            if (cached) {
+                currentProfile = cached;
+            } else {
+                const snap = await withTimeout(db.collection('users').doc(user.uid).get(), 10000, 'タイムアウト');
+                if (!snap.exists || snap.data().mustChange) { goLogin(); return; }
+                currentProfile = snap.data();
+            }
             currentUser = user.uid;
             currentUsername = nameLabel(currentProfile);
             resetSessionCache();
