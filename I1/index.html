@@ -19,13 +19,15 @@
         </div>
     </div>
 
-    <div id="loading-overlay" class="loading-overlay active">
-        <div class="loading-spinner"></div>
-        <div id="loading-overlay-text" class="loading-overlay-text">読み込み中...</div>
-        <div id="loading-overlay-hint" class="loading-overlay-hint">
-            <p>通信に時間がかかっています。<br>電波の良い場所への移動や通信環境をご確認のうえ、もう少しお待ちいただくか、再読み込みしてください。</p>
-            <div class="loading-overlay-hint-btns">
-                <button type="button" class="btn btn-sub" onclick="location.reload()">ページを再読み込みする</button>
+    <div id="loading-overlay" class="loading-overlay active" role="status" aria-live="polite">
+        <div class="loading-card">
+            <div class="loading-spinner"></div>
+            <div id="loading-overlay-text" class="loading-overlay-text">読み込み中…</div>
+            <div id="loading-overlay-hint" class="loading-overlay-hint">
+                <p>通信に時間がかかっています。<br>電波の良い場所への移動や通信環境をご確認のうえ、もう少しお待ちいただくか、再読み込みしてください。</p>
+                <div class="loading-overlay-hint-btns">
+                    <button type="button" class="btn btn-sub" onclick="location.reload()">ページを再読み込みする</button>
+                </div>
             </div>
         </div>
     </div>

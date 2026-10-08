@@ -39,6 +39,8 @@ function disarmLoadingStuckTimer() {
     if (hintEl) hintEl.classList.remove('show');
 }
 
+window.addEventListener('pageshow', (e) => { if (e.persisted) { loadingDepth = 0; document.getElementById('loading-overlay').classList.remove('active'); } });
+
 function notifySyncError(what) {
     const wrap = document.getElementById('sync-toast-wrap');
     if (!wrap) return;
@@ -83,7 +85,7 @@ function nameLabel(p) {
 }
 
 function goLogin() { location.replace('../'); }
-function backToSiteMenu() { location.href = '../#menu'; }
+function backToSiteMenu() { showLoading('読み込み中…'); location.href = '../#menu'; }
 
 async function startApp() {
     const cfg = window.FIREBASE_CONFIG;

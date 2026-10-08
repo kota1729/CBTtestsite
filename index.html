@@ -644,6 +644,7 @@
         button:hover { filter: none; transform: translateY(-1px); }
         button:active { transform: translateY(1px); box-shadow: none; }
         button:disabled { box-shadow: none; }
+        .toggle-pw-btn, .toggle-pw-btn:hover, .toggle-pw-btn:active { transform: translateY(-50%); box-shadow: none; }
         .app-dialog-card { border-radius: 14px 6px 14px 6px; }
         .app-dialog-card .actions button { min-width: 120px; padding: 11px 20px; font-size: 15px; }
     </style>
@@ -950,6 +951,7 @@
         const showConfirm = (message, title = '確認', options = {}) => showAppDialog(title, message, { cancel: true, cancelText: options.cancelText || 'キャンセル', okText: options.okText || 'OK' });
         function showLoading(message = '読み込み中…') { $('loadingText').textContent = message; $('loadingOverlay').classList.remove('hidden'); }
         function hideLoading() { $('loadingOverlay').classList.add('hidden'); }
+        window.addEventListener('pageshow', (e) => { if (e.persisted) hideLoading(); });   // ブラウザの「戻る」で戻ったとき、読み込み表示が残らないように
         function setInlineLoading(el, message = '読み込み中…') { el.innerHTML = `<span class="loading-inline"><span class="loading-spinner"></span><span>${escapeHtml(message)}</span></span>`; }
 
         function shuffle(items) {
@@ -1284,7 +1286,7 @@
             else enterStudent();
         }
         $('chooseCbt').onclick = () => { $('chooseCbt').disabled = true; showLoading('読み込み中…'); enterCbt().finally(() => { hideLoading(); $('chooseCbt').disabled = false; }); };
-        $('chooseI1').onclick = () => { location.href = './I1/'; };
+        $('chooseI1').onclick = () => { showLoading('I1テスト対策を開いています…'); location.href = './I1/'; };
         $('appChooserLogout').onclick = showLogin;
 
 
