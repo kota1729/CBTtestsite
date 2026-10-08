@@ -829,7 +829,7 @@
                 <div class="qhead"><span id="progress">問題 1 / 10</span><span class="pill" id="category"></span></div>
                 <div class="question" id="prompt"></div>
                 <div class="choices" id="choices"></div>
-                <div class="actions"><button id="next">回答する</button><button class="secondary" id="quit">中断</button>
+                <div class="actions"><button class="secondary" id="prevQ" type="button">← 前の問題</button><button id="next">回答する</button><button class="secondary" id="quit">中断</button>
                 </div>
                 <p class="muted" id="quizMessage"></p>
             </div>
@@ -1442,6 +1442,7 @@
             questions = shuffle(availableQuestions);   // 毎回ランダムな順番で出題
             answers = [];
             userAnswers = [];
+            singleOptions = [];
             questionIndex = 0;
             $('profile').classList.add('hidden');
             $('quiz').classList.remove('hidden');
@@ -1462,23 +1463,29 @@
             if (button) startQuestionSet(Number(button.dataset.setIndex));
         });
 
+        let singleOptions = [];   // 問題ごとの選択肢の並び（前の問題に戻っても同じ並びにする）
         function drawSingleQuestion() {
             const question = questions[questionIndex];
-            const options = shuffle(question.a.map((text, index) => ({
-                text,
-                isCorrect: index === question.k,
-            })));
+            if (!singleOptions[questionIndex]) {
+                singleOptions[questionIndex] = shuffle(question.a.map((text, index) => ({
+                    text,
+                    isCorrect: index === question.k,
+                })));
+            }
+            const options = singleOptions[questionIndex];
+            const previous = userAnswers[questionIndex];
             $('progress').textContent = `問題 ${questionIndex + 1} / ${questions.length}`;
             $('category').textContent = question.c;
             $('prompt').textContent = question.q;
             $('quizMessage').textContent = '';
             $('choices').innerHTML = options.map((option, index) => `
                 <label class="choice">
-                    <input type="radio" name="singleAnswer" value="${option.isCorrect ? '1' : '0'}" data-text="${escapeHtml(option.text)}" autocomplete="off">
+                    <input type="radio" name="singleAnswer" value="${option.isCorrect ? '1' : '0'}" data-text="${escapeHtml(option.text)}" autocomplete="off"${previous !== undefined && previous === option.text ? ' checked' : ''}>
                     ${String.fromCharCode(65 + index)}. ${escapeHtml(option.text)}
                 </label>
             `).join('');
             $('next').textContent = questionIndex === questions.length - 1 ? '採点する' : '回答する';
+            $('prevQ').disabled = questionIndex === 0;
         }
 
         $('next').onclick = () => {
@@ -1487,12 +1494,28 @@
                 $('quizMessage').textContent = '選択肢を選んでください。';
                 return;
             }
-            answers.push(selected.value === '1');
-            userAnswers.push(selected.dataset.text);
+            answers[questionIndex] = selected.value === '1';
+            userAnswers[questionIndex] = selected.dataset.text;
             questionIndex += 1;
             if (questionIndex < questions.length) drawSingleQuestion();
             else finishQuiz();
         };
+
+        $('prevQ').onclick = () => {
+            if (questionIndex === 0) return;
+            questionIndex -= 1;
+            drawSingleQuestion();
+        };
+
+        // 入力式：Enterで次の問題の解答欄へ、Shift+Enterで前の問題の解答欄へ
+        $('batchQuestions').addEventListener('keydown', (event) => {
+            const input = event.target.closest('.answer-input');
+            if (!input || event.key !== 'Enter' || event.isComposing) return;
+            event.preventDefault();
+            const inputs = [...document.querySelectorAll('.answer-input')];
+            const target = inputs[inputs.indexOf(input) + (event.shiftKey ? -1 : 1)];
+            if (target) { target.focus(); target.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+        });
 
         function drawQuestionList() {
             const isFillIn = questionMode === 'fill';
