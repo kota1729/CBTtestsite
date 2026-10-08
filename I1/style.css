@@ -216,6 +216,13 @@ h1 {
     font-weight: 700;
 }
 
+.answer-blank {
+    display: inline-block;
+    height: 1.1em;
+    vertical-align: baseline;
+    border-bottom: 2px solid currentColor;
+}
+
 .q-image {
     display: block;
     width: 100%;

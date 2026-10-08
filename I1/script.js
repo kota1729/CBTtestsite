@@ -393,7 +393,7 @@ async function showQuestion() {
     const container = document.getElementById('quiz-a-container');
     container.classList.remove('revealed');
 
-    document.getElementById('quiz-question').innerHTML = formatQuestionText(current.q);
+    document.getElementById('quiz-question').innerHTML = formatQuestionText(current.q, current.a);
     document.getElementById('quiz-answer').innerText = current.a;
 
     const imgEl = document.getElementById('quiz-question-img');
@@ -431,16 +431,26 @@ async function showQuestion() {
 }
 
 // [[...]] で囲まれた語句だけを、教材の赤字として安全に表示する。
-function formatQuestionText(question) {
+// 英語の空欄は、答えの語数に合わせて一本ずつの下線にする。
+function formatQuestionText(question, answer = '') {
+    const blanks = makeAnswerBlanks(answer);
     return String(question)
         .split(/(\[\[[\s\S]*?\]\])/g)
         .map(part => {
             if (part.startsWith('[[') && part.endsWith(']]')) {
                 return `<span class="question-keyword">${escapeHtml(part.slice(2, -2))}</span>`;
             }
-            return escapeHtml(part);
+            return escapeHtml(part).replace(/_{3,}/g, blanks);
         })
         .join('');
+}
+
+function makeAnswerBlanks(answer) {
+    const words = String(answer).trim().split(/\s+/).filter(Boolean);
+    return words.map(word => {
+        const width = Math.max(2.6, Math.min(10, word.replace(/[^A-Za-z]/g, '').length * 0.62));
+        return `<span class="answer-blank" style="width:${width}em"></span>`;
+    }).join(' ');
 }
 
 function toggleMemoVisibility() {
@@ -541,7 +551,7 @@ async function setupListScreen() {
         return `
             <div class="qa-card">
                 <div class="card-header">
-                    <div class="q-text">問 ${idx + 1}: ${formatQuestionText(item.q)}</div>
+                    <div class="q-text">問 ${idx + 1}: ${formatQuestionText(item.q, item.a)}</div>
                     <button class="star-btn ${isStarred ? 'active' : ''}" onclick="toggleStarList(${idx}, this)">★</button>
                 </div>
                 ${item.img ? `<img src="${escapeHtml(item.img)}" class="q-image" alt="問題の画像">` : ''}
