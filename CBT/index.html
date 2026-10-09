@@ -126,7 +126,7 @@
             </section>
         </section>
         <section class="card hidden" id="quiz">
-            <h2 class="section-title" id="quizUnit"></h2>
+            <div class="unit-chip" id="quizUnit"></div>
             <div id="singleMode">
                 <div class="qhead"><span id="progress">問題 1 / 10</span></div>
                 <div class="question" id="prompt"></div>
@@ -1007,8 +1007,11 @@
             } finally { hideLoading(); }
         });
 
+        new MutationObserver(() => { const m = $('authorMessage'); if (!m.textContent.startsWith('✓')) m.classList.remove('author-ok'); }).observe($('authorMessage'), { childList: true, characterData: true, subtree: true });
         $('questionForm').onsubmit = async (event) => {
             event.preventDefault();
+            $('authorMessage').classList.remove('author-ok');
+            $('authorMessage').textContent = '';
             const type = $('newQuestionType').value;
             const setTitle = $('newQuestionSet').value.trim();
             const subject = $('newSubject').value.trim();
@@ -1074,7 +1077,11 @@
                 submitButton.disabled = false;
             }
             const scheduleLabel = $('releaseMode').value === 'now' ? '公開しました' : `公開予約しました（${new Date(releaseAt).toLocaleString('ja-JP')}）`;
-            $('authorMessage').textContent = `「${setTitle}」を${scheduleLabel}。`;
+            const doneMsg = `「${setTitle}」を${scheduleLabel}。`;
+            $('authorMessage').textContent = '✓ ' + doneMsg;
+            $('authorMessage').classList.add('author-ok');
+            $('authorMessage').scrollIntoView({ block: 'center', behavior: 'smooth' });
+            showAlert(`${doneMsg}\n問題数：${doc.questions.length}問 ／ 対象：${formatTargets(targets)}`, '問題セットを作成しました');
             $('newQuestionSet').value = '';
             $('newSubject').value = '';
             populateUnitList();

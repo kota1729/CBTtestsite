@@ -665,3 +665,9 @@ img, video { max-width: 100%; height: auto; }
     .tablewrap table { min-width: 560px; }
     th, td { padding: 8px 6px; font-size: 13px; }
 }
+
+/* 単元名：問題文の上に、小さく薄緑の角丸で表示 */
+.unit-chip { display: inline-block; margin: 0 0 12px; padding: 3px 12px; border-radius: 999px; background: #dff1e4; color: #1f5f3a; font-size: 13px; font-weight: 700; line-height: 1.6 }
+.unit-chip:empty { display: none }
+/* 問題セットを作成した結果の表示 */
+#authorMessage.author-ok { margin-top: 12px; padding: 12px 14px; border-radius: 10px; background: #dff1e4; border: 1px solid #8fcca3; color: #1f5f3a; font-weight: 700; font-size: 15px }
