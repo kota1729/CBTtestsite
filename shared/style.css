@@ -517,24 +517,6 @@ th {
     outline: 2px solid var(--blue);
 }
 
-@media (max-width: 800px) {
-    .number-picker-options {
-        grid-template-columns: repeat(6, minmax(40px, 1fr));
-    }
-}
-
-@media (max-width: 550px) {
-    .number-picker-options {
-        grid-template-columns: repeat(4, minmax(38px, 1fr));
-    }
-}
-
-@media (max-width: 360px) {
-    .number-picker-options {
-        grid-template-columns: repeat(3, minmax(38px, 1fr));
-    }
-}
-
 .pool-answer-input {
     width: 120px;
     padding: 8px;
@@ -671,3 +653,17 @@ img, video { max-width: 100%; height: auto; }
 .unit-chip:empty { display: none }
 /* 問題セットを作成した結果の表示 */
 #authorMessage.author-ok { margin-top: 12px; padding: 12px 14px; border-radius: 10px; background: #dff1e4; border: 1px solid #8fcca3; color: #1f5f3a; font-weight: 700; font-size: 15px }
+
+/* スマホ：タイトル枠と問題枠の端をそろえる（傾きをなくす） */
+@media (max-width: 600px) {
+    .hero, .card, .card:nth-of-type(even) { transform: none; }
+    .hero { box-shadow: 3px 4px 0 var(--accent); }
+}
+
+/* 選択肢の一覧：文字が縦に何行にも割れないよう、幅に合わせて並べる（スマホは1列） */
+.number-picker-options { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); max-height: 60vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.number-picker-option { padding: 10px 12px; text-align: left; line-height: 1.5; word-break: normal; overflow-wrap: anywhere; box-shadow: none; }
+@media (max-width: 600px) {
+    .number-picker-options, .number-picker-options[class] { grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 8px; }
+    .number-picker-toggle { width: 100%; text-align: left; }
+}

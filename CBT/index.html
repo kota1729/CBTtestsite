@@ -65,6 +65,7 @@
                                 <option value="fill">回答を直接入力する</option>
                                 <option value="individual">1問ずつ出題（各問4択）</option>
                             </select></div>
+                        <div id="pageSizeField"><label for="newPageSize">1画面あたりの問題数（1〜30）</label><input id="newPageSize" type="number" inputmode="numeric" value="10" autocomplete="off"><p class="muted" style="margin:4px 0 0;font-size:12px">問題が多いとき、この数ごとに画面を分けます。「複数問題で選択肢をまとめる」では、選択肢もその画面の問題の分だけになります。</p></div>
                         <div><label for="releaseMode">生徒への出題時刻</label><select autocomplete="off" id="releaseMode">
                                 <option value="now">今すぐ公開</option>
                                 <option value="delay">何分後に公開</option>
@@ -139,11 +140,7 @@
                 <div class="qhead"><span id="batchProgress"></span><span class="pill" id="batchModeLabel"></span></div>
                 <p class="muted" id="batchInstruction"></p>
                 <div id="batchQuestions"></div>
-                <section id="choicePoolSection" class="choice-pool-section hidden">
-                    <h3>共通の選択肢</h3>
-                    <ol id="choicePool" class="choice-pool"></ol>
-                </section>
-                <div class="actions"><button id="submitBatch">ここまでで採点する</button><button class="secondary"
+                <div class="actions"><button class="secondary hidden" id="prevPage" type="button">← 前の画面</button><button class="hidden" id="nextPage" type="button">次の画面へ</button><button id="submitBatch">ここまでで採点する</button><button class="secondary"
                         id="quitBatch">中断</button></div>
                 <p class="muted" id="batchMessage"></p>
             </div>
@@ -258,7 +255,7 @@
                     const set = doc.data();
                     (set.questions || []).forEach((item) => out.push({
                         c: item.c || set.unit || set.subject || '', setId: doc.id, setTitle: set.setTitle, subject: set.subject || '',
-                        unit: set.unit || '', targets: set.targets || [], type: set.type, q: item.q, a: item.a,
+                        unit: set.unit || '', targets: set.targets || [], type: set.type, pageSize: set.pageSize || 0, q: item.q, a: item.a,
                         k: item.k || 0, releaseAt: set.releaseAt || '', createdBy: set.createdBy || '', remote: true,
                     }));
                 });
@@ -395,6 +392,7 @@
                         type: question.type,
                         subject: question.subject || '',
                         unit: question.unit || '',
+                        pageSize: question.pageSize || 0,
                         questions: [],
                     });
                 }
@@ -433,6 +431,8 @@
             userAnswers = [];
             singleOptions = [];
             questionIndex = 0;
+            batchPage = 0; batchAnswers = []; pagePools = [];
+            pageSize = questionMode !== 'single' && selectedQuestionSet.pageSize > 0 ? selectedQuestionSet.pageSize : questions.length;
             $('profile').classList.add('hidden');
             $('quiz').classList.remove('hidden');
             $('quizUnit').textContent = selectedQuestionSet.unit || selectedQuestionSet.title || '';
@@ -510,45 +510,74 @@
             if (target) { target.focus(); target.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
         });
 
+        // まとめて出題（入力式・選択肢をまとめる）：先生が決めた「1画面あたりの問題数」ごとに画面を分ける
+        let batchPage = 0;          // いま何画面目か（0から）
+        let pageSize = 0;           // 1画面の問題数
+        let batchAnswers = [];      // 全問の答え（問題の番号ごと。画面を行き来しても残す）
+        let pagePools = [];         // 画面ごとの選択肢の並び（戻っても同じ並びにする）
+        const pageCount = () => Math.max(1, Math.ceil(questions.length / pageSize));
+        const pageStart = () => batchPage * pageSize;
+        const pageQuestions = () => questions.slice(pageStart(), pageStart() + pageSize);
+
+        function captureBatchPage() {   // いまの画面の答えを覚える
+            if (questionMode !== 'fill') return;
+            document.querySelectorAll('.answer-input').forEach((input) => { batchAnswers[pageStart() + Number(input.dataset.answerIndex)] = input.value; });
+        }
+
         function drawQuestionList() {
             const isFillIn = questionMode === 'fill';
-            $('batchProgress').textContent = `${questions.length}問をまとめて出題`;
-            $('batchModeLabel').textContent = isFillIn ? '回答を入力' : '共通の選択肢から選ぶ';
+            const pages = pageCount();
+            const start = pageStart();
+            const list = pageQuestions();
+            $('batchProgress').textContent = pages > 1 ? `全${questions.length}問 ・ ${batchPage + 1} / ${pages} 画面目` : `${questions.length}問をまとめて出題`;
+            $('batchModeLabel').textContent = isFillIn ? '回答を入力' : '選択肢から選ぶ';
             $('batchMessage').textContent = '';
             $('batchInstruction').textContent = isFillIn
                 ? '各問題の欄に回答を入力し、最後にまとめて採点します。'
-                : '問題文を上から読み、各問に選択肢の記号を記入してください。選択肢は下の共通一覧にあります。';
-            $('choicePoolSection').classList.toggle('hidden', isFillIn);
+                : '各問の「番号を選択」を押して、選択肢から答えを選んでください。';
+            $('prevPage').classList.toggle('hidden', batchPage === 0);
+            $('nextPage').classList.toggle('hidden', batchPage >= pages - 1);
+            $('submitBatch').textContent = batchPage >= pages - 1 ? '採点する' : 'ここまでで採点する';
 
             if (isFillIn) {
-                $('batchQuestions').innerHTML = questions.map((question, index) => `
+                $('batchQuestions').innerHTML = list.map((question, index) => `
                     <article class="batch-item">
                         <div class="batch-item-heading">
-                            <strong>${index + 1}. ${escapeHtml(question.q)}</strong>
+                            <strong>${start + index + 1}. ${escapeHtml(question.q)}</strong>
                         </div>
-                        <input class="answer-input" type="text" data-answer-index="${index}" autocomplete="off" placeholder="回答を入力">
+                        <input class="answer-input" type="text" data-answer-index="${index}" autocomplete="off" placeholder="回答を入力" value="${escapeHtml(batchAnswers[start + index] || '')}">
                     </article>
                 `).join('');
                 return;
             }
 
-            sharedChoicePool = shuffle([...new Set(questions.flatMap((question) => question.a))]);
-            selectedChoiceNumbers = questions.map(() => null);
-            $('batchQuestions').innerHTML = questions.map((question, index) => `
+            if (!pagePools[batchPage]) pagePools[batchPage] = shuffle([...new Set(list.flatMap((question) => question.a))]);
+            sharedChoicePool = pagePools[batchPage];
+            selectedChoiceNumbers = list.map((_, index) => {
+                const at = sharedChoicePool.indexOf(batchAnswers[start + index]);
+                return at >= 0 ? at : null;
+            });
+            $('batchQuestions').innerHTML = list.map((question, index) => `
                 <article class="batch-item batch-item-with-answer">
-                    <strong>${index + 1}. ${escapeHtml(question.q)}</strong>
+                    <strong>${start + index + 1}. ${escapeHtml(question.q)}</strong>
                     <div class="number-picker" data-answer-index="${index}">
                         <button class="secondary number-picker-toggle" type="button" aria-expanded="false" aria-controls="answerOptions${index}">番号を選択</button>
-                        <div class="number-picker-options hidden" id="answerOptions${index}" role="group" aria-label="${index + 1}問目の選択肢番号"></div>
+                        <div class="number-picker-options hidden" id="answerOptions${index}" role="group" aria-label="${start + index + 1}問目の選択肢番号"></div>
                     </div>
                 </article>
-            `).join('');
-            $('choicePool').innerHTML = sharedChoicePool.map((choice) => `
-                <li>${escapeHtml(choice)}</li>
             `).join('');
 
             renderAnswerNumberPickers();
         }
+
+        function goBatchPage(delta) {
+            captureBatchPage();
+            batchPage = Math.min(pageCount() - 1, Math.max(0, batchPage + delta));
+            drawQuestionList();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        $('prevPage').onclick = () => goBatchPage(-1);
+        $('nextPage').onclick = () => goBatchPage(1);
 
         function renderAnswerNumberPickers() {
             document.querySelectorAll('.number-picker').forEach((picker) => {
@@ -587,7 +616,9 @@
             const option = event.target.closest('.number-picker-option');
             if (!option) return;
             const picker = option.closest('.number-picker');
-            selectedChoiceNumbers[Number(picker.dataset.answerIndex)] = Number(option.dataset.choiceIndex);
+            const local = Number(picker.dataset.answerIndex);
+            selectedChoiceNumbers[local] = Number(option.dataset.choiceIndex);
+            batchAnswers[pageStart() + local] = sharedChoicePool[selectedChoiceNumbers[local]];
             renderAnswerNumberPickers();
             document.querySelectorAll('.number-picker-options').forEach((options) => options.classList.add('hidden'));
             document.querySelectorAll('.number-picker-toggle').forEach((button) => button.setAttribute('aria-expanded', 'false'));
@@ -606,17 +637,14 @@
         }
 
         $('submitBatch').onclick = async () => {
+            captureBatchPage();
             const items = [];
-            if (questionMode === 'fill') {
-                [...document.querySelectorAll('.answer-input')].forEach((input, index) => {
-                    if (input.value.trim()) items.push({ index, text: input.value.trim(), ok: isFillCorrect(input.value, questions[index].a[questions[index].k]) });
-                });
-            } else {
-                selectedChoiceNumbers.forEach((selectedIndex, index) => {
-                    if (selectedIndex === null || selectedIndex < 0) return;
-                    items.push({ index, text: sharedChoicePool[selectedIndex], ok: normalizeAnswer(sharedChoicePool[selectedIndex]) === normalizeAnswer(questions[index].a[questions[index].k]) });
-                });
-            }
+            questions.forEach((question, index) => {
+                const given = batchAnswers[index];
+                if (given === undefined || !String(given).trim()) return;
+                const correct = question.a[question.k];
+                items.push({ index, text: String(given).trim(), ok: questionMode === 'fill' ? isFillCorrect(given, correct) : normalizeAnswer(given) === normalizeAnswer(correct) });
+            });
             if (!items.length) { $('batchMessage').textContent = '1問以上、答えを入力・選択してください。'; return; }
             $('batchMessage').textContent = '';
             await gradeAnswered(items);
@@ -831,6 +859,9 @@
             populateSourceQuestionList();
         });
         $('releaseMode').addEventListener('change', updateReleaseFields);
+        function updatePageSizeField() { $('pageSizeField').classList.toggle('hidden', $('newQuestionType').value === 'individual'); }
+        $('newQuestionType').addEventListener('change', updatePageSizeField);
+        updatePageSizeField();
 
         function renderTeacherQuestions() {
             const questionsForSchool = getCustomQuestions();
@@ -1026,6 +1057,14 @@
                 $('authorMessage').textContent = '1問ずつ出題（各問4択）では、選択するすべての問題に4つの選択肢が必要です。';
                 return;
             }
+            let pageSize = 0;
+            if (type !== 'individual') {
+                pageSize = Number($('newPageSize').value);
+                if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 30) {
+                    $('authorMessage').textContent = '1画面あたりの問題数は、1〜30の整数で入力してください。';
+                    return;
+                }
+            }
             if (getCustomQuestions().some((question) => question.setTitle === setTitle)) {
                 $('authorMessage').textContent = '同じ名前の問題セットがすでにあります。別の名前にしてください。';
                 return;
@@ -1052,6 +1091,7 @@
 
             const doc = {
                 setTitle, subject, unit, targets, type, releaseAt,
+                ...(pageSize ? { pageSize } : {}),
                 questions: selectedIndexes.map((index) => {
                     const source = window.questionBank[index];
                     return {
