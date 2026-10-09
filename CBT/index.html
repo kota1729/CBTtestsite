@@ -467,6 +467,9 @@
             const previous = userAnswers[questionIndex];
             $('progress').textContent = `問題 ${questionIndex + 1} / ${questions.length}`;
             $('prompt').textContent = question.q;
+            // 単元名は一番上に表示。セットの単元が「すべて」などのときは、その問題の単元名を出す
+            const setUnit = selectedQuestionSet.unit && selectedQuestionSet.unit !== 'すべて' ? selectedQuestionSet.unit : '';
+            $('quizUnit').textContent = setUnit || question.c || selectedQuestionSet.unit || selectedQuestionSet.title || '';
             $('quizMessage').textContent = '';
             $('choices').innerHTML = options.map((option, index) => `
                 <label class="choice">
