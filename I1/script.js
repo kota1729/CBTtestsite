@@ -101,7 +101,7 @@ async function startApp() {
     if (!firebase.apps.length) firebase.initializeApp(cfg);
     auth = firebase.auth();
     db = firebase.firestore();
-    try { await auth.setPersistence(localStorage.getItem('cbt_login_persistence') === 'local' ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION); } catch (e) { /* そのまま続ける */ }
+    try { await auth.setPersistence(localStorage.getItem('app_login_persistence') === 'local' ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION); } catch (e) { /* そのまま続ける */ }
 
     let started = false;
     auth.onAuthStateChanged(async (user) => {
@@ -111,7 +111,7 @@ async function startApp() {
         try {
             // CBTのページで読んだログイン情報があれば、それを使う（このタブで、もう一度読み込まない）
             let cached = null;
-            try { const c = JSON.parse(sessionStorage.getItem('cbt_profile') || 'null'); if (c && c.uid === user.uid && c.profile) cached = c.profile; } catch (e) { cached = null; }
+            try { const c = JSON.parse(sessionStorage.getItem('app_profile') || 'null'); if (c && c.uid === user.uid && c.profile) cached = c.profile; } catch (e) { cached = null; }
             if (cached) {
                 currentProfile = cached;
             } else {
@@ -393,7 +393,7 @@ async function showQuestion() {
     const container = document.getElementById('quiz-a-container');
     container.classList.remove('revealed');
 
-    document.getElementById('quiz-question').innerHTML = formatQuestionText(current.q, current.a);
+    document.getElementById('quiz-question').innerText = current.q;
     document.getElementById('quiz-answer').innerText = current.a;
 
     const imgEl = document.getElementById('quiz-question-img');
@@ -428,29 +428,6 @@ async function showQuestion() {
     document.getElementById('quiz-count').innerText = `第 ${currentIndex + 1} 問 / ${total} 問`;
     document.getElementById('quiz-progress').style.width = `${(currentIndex / total) * 100}%`;
     document.getElementById('prev-btn').disabled = (currentIndex === 0);
-}
-
-// [[...]] で囲まれた語句だけを、教材の赤字として安全に表示する。
-// 英語の空欄は、答えの語数に合わせて一本ずつの下線にする。
-function formatQuestionText(question, answer = '') {
-    const blanks = makeAnswerBlanks(answer);
-    return String(question)
-        .split(/(\[\[[\s\S]*?\]\])/g)
-        .map(part => {
-            if (part.startsWith('[[') && part.endsWith(']]')) {
-                return `<span class="question-keyword">${escapeHtml(part.slice(2, -2))}</span>`;
-            }
-            return escapeHtml(part).replace(/_{3,}/g, blanks);
-        })
-        .join('');
-}
-
-function makeAnswerBlanks(answer) {
-    const words = String(answer).trim().split(/\s+/).filter(Boolean);
-    return words.map(word => {
-        const width = Math.max(2.6, Math.min(10, word.replace(/[^A-Za-z]/g, '').length * 0.62));
-        return `<span class="answer-blank" style="width:${width}em"></span>`;
-    }).join(' ');
 }
 
 function toggleMemoVisibility() {
@@ -551,7 +528,7 @@ async function setupListScreen() {
         return `
             <div class="qa-card">
                 <div class="card-header">
-                    <div class="q-text">問 ${idx + 1}: ${formatQuestionText(item.q, item.a)}</div>
+                    <div class="q-text">問 ${idx + 1}: ${escapeHtml(item.q)}</div>
                     <button class="star-btn ${isStarred ? 'active' : ''}" onclick="toggleStarList(${idx}, this)">★</button>
                 </div>
                 ${item.img ? `<img src="${escapeHtml(item.img)}" class="q-image" alt="問題の画像">` : ''}

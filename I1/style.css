@@ -211,18 +211,6 @@ h1 {
     flex: 1;
 }
 
-.question-keyword {
-    color: #d23b47;
-    font-weight: 700;
-}
-
-.answer-blank {
-    display: inline-block;
-    height: 1.1em;
-    vertical-align: baseline;
-    border-bottom: 2px solid currentColor;
-}
-
 .q-image {
     display: block;
     width: 100%;
@@ -953,3 +941,7 @@ h1::after { content: ""; display: block; width: 70px; height: 4px; margin: 8px a
 .loading-overlay-text { color: #7a7265; font-size: 14px; font-weight: normal; }
 .loading-overlay-hint { background: none; border: 0; box-shadow: none; padding: 12px 0 0; max-width: none; }
 .toggle-pw-btn, .toggle-pw-btn:hover, .toggle-pw-btn:active { transform: translateY(-50%); }
+
+/* スマホ：安全領域と入力欄の拡大防止 */
+body { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); padding-bottom: env(safe-area-inset-bottom); }
+@media (max-width: 600px) { input, select, textarea { font-size: 16px; } }

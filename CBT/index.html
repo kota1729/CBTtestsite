@@ -1,0 +1,1214 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>CBTテスト（小テスト）</title>
+    <link rel="stylesheet" href="../shared/style.css">
+</head>
+
+<body class="auth-mode">
+    <main class="wrap">
+        <header class="hero">
+            <h1>教科別 学習ミニテスト</h1>
+            <p>教科や単元ごとの問題に取り組み、理解度を確認しましょう。</p>
+        </header>
+        <section class="card hidden" id="roleChooser">
+            <h1 class="auth-title">CBTテスト：どの画面を開きますか？</h1>
+            <p class="auth-sub" id="roleChooserWho"></p>
+            <div class="auth-form">
+                <button type="button" id="chooseTeacher">先生画面（問題の公開・生徒の記録）</button>
+                <button type="button" id="chooseStudent">生徒画面（問題を解く）</button>
+                <button type="button" id="chooseAdmin">管理画面（生徒の登録・パスワード・問題テンプレート）</button>
+            </div>
+            <p class="muted auth-msg" id="chooserMessage" role="status"></p>
+            <div class="auth-btns"><button class="secondary" type="button" id="chooserBack">アプリの選択に戻る</button></div>
+        </section>
+        <section class="card hidden" id="profile">
+            <h2 class="section-title">小テスト</h2>
+            <p id="signedInStudent" class="muted">ログイン中</p>
+            <h3>実施できる問題セット</h3>
+            <div id="questionSetList" class="question-set-list" aria-label="実施できる問題セット"></div>
+            <div class="actions"><button class="secondary" id="showTeacher">結果一覧</button><button class="secondary" type="button" data-to-prev>アプリの選択に戻る</button></div>
+        </section>
+        <section class="card hidden" id="teacherDashboard">
+            <h2 class="section-title">先生用：問題作成</h2>
+            <p class="muted" id="signedInTeacher"></p>
+            <div class="question-set-list" id="teacherMenu" aria-label="先生メニュー">
+                <button class="question-set-card" type="button" data-teacher-view="create"><span
+                        class="question-set-title">問題を作る</span><span class="question-set-action">問題作成画面を開く
+                        →</span></button>
+                <button class="question-set-card" type="button" data-teacher-view="records"><span
+                        class="question-set-title">生徒の記録を見る</span><span class="question-set-action">受験記録一覧を開く
+                        →</span></button>
+                <button class="question-set-card" type="button" data-teacher-view="current"><span
+                        class="question-set-title">現在作っている問題</span><span class="question-set-action">問題セット一覧を開く
+                        →</span></button>
+                <div class="actions"><button class="secondary" type="button" data-to-prev>アプリの選択に戻る</button></div>
+            </div>
+            <section class="hidden" id="teacherCreatePanel">
+                <div class="actions"><button class="secondary" type="button" data-teacher-menu>先生メニューへ戻る</button></div>
+                <h3>問題を作る</h3>
+                <form id="questionForm">
+                    <div class="grid">
+                        <div><label for="newQuestionSet">名前（問題セット名）</label><input id="newQuestionSet" required
+                                placeholder="例：数学 I 第1章確認テスト" autocomplete="off"></div>
+                        <div><label for="newSubject">教科</label><select autocomplete="off" id="newSubject" required>
+                                <option value="">教科を選択</option>
+                            </select></div>
+                        <div><label for="newUnit">単元</label><select autocomplete="off" id="newUnit" required disabled>
+                                <option value="">先に教科を選択</option>
+                            </select></div>
+                        <div><label for="newQuestionType">問題タイプ</label><select autocomplete="off" id="newQuestionType">
+                                <option value="choice">複数問題で選択肢をまとめる</option>
+                                <option value="fill">回答を直接入力する</option>
+                                <option value="individual">1問ずつ出題（各問4択）</option>
+                            </select></div>
+                        <div><label for="releaseMode">生徒への出題時刻</label><select autocomplete="off" id="releaseMode">
+                                <option value="now">今すぐ公開</option>
+                                <option value="delay">何分後に公開</option>
+                                <option value="datetime">日時を指定して公開</option>
+                            </select></div>
+                        <div id="delaySettings" class="hidden"><label for="delayMinutes">何分後</label><input
+                                id="delayMinutes" type="number" min="1" value="5" autocomplete="off"></div>
+                        <div id="datetimeSettings" class="hidden"><label for="releaseDateTime">公開日時</label><input
+                                id="releaseDateTime" type="datetime-local" autocomplete="off"></div>
+                    </div>
+                    <fieldset class="target-department-fieldset">
+                        <legend>対象学年・学科（複数選択できます）</legend>
+                        <div id="targetDepartmentList" class="target-department-list"></div>
+                    </fieldset>
+                    <h3 style="margin-bottom:4px">教科・単元に一致する登録済み問題</h3>
+                    <p class="muted" id="selectedQuestionCount">0問選択中</p>
+                    <div class="actions" style="align-items:end; margin:8px 0">
+                        <label for="randomQuestionCount">ランダムに選ぶ問題数</label>
+                        <input id="randomQuestionCount" type="number" min="1" value="5" style="max-width:100px" autocomplete="off">
+                        <button id="randomSelectQuestions" type="button" class="secondary">条件に合う問題からランダム選択</button>
+                        <button id="selectAllQuestions" type="button" class="secondary">すべての問題を選択</button>
+                        <button id="clearAllQuestions" type="button" class="secondary">選択をすべて外す</button>
+                    </div>
+                    <div id="sourceQuestionList" class="source-question-list" aria-label="選択できる既存問題"></div>
+                    <div class="actions"><button type="submit">選んだ問題でセットを保存</button></div>
+                    <p class="muted" id="authorMessage" role="status"></p>
+                </form>
+            </section>
+            <section class="card hidden" id="teacherRecordsPanel">
+                <div class="actions"><button class="secondary" type="button" data-teacher-menu>先生メニューへ戻る</button></div>
+                <h3>生徒の記録を見る</h3>
+                <div class="actions" style="align-items:end"><div><label for="recordSetFilter">問題セット</label><select autocomplete="off" id="recordSetFilter"><option value="">すべて</option></select></div>
+                    <div><label for="recordGradeFilter">学年</label><select autocomplete="off" id="recordGradeFilter"><option value="">すべて</option><option>1年</option><option>2年</option><option>3年</option></select></div>
+                    <button class="secondary" type="button" id="refreshTeacherRecords">記録を更新</button>
+                    <button class="secondary" type="button" id="downloadTeacherRecords">CSVで保存</button>
+                    <button class="danger" type="button" id="deleteAllRecords">記録を全て削除</button>
+                </div>
+                <p class="muted" id="teacherRecordsInfo" role="status"></p>
+                <div class="tablewrap" style="margin-top:14px">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>日時</th>
+                                <th>学年・クラス</th>
+                                <th>出席番号</th>
+                                <th>ユーザーID</th>
+                                <th>問題セット</th>
+                                <th>得点</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teacherRecords"></tbody>
+                    </table>
+                </div>
+            </section>
+            <section class="card hidden" id="teacherCurrentQuestionsPanel">
+                <div class="actions"><button class="secondary" type="button" data-teacher-menu>先生メニューへ戻る</button></div>
+                <h3>公開している問題セット <span class="muted" id="teacherQuestionCount"></span></h3>
+                <ol id="teacherQuestionList" class="teacher-question-list"></ol>
+            </section>
+        </section>
+        <section class="card hidden" id="quiz">
+            <h2 class="section-title" id="quizUnit"></h2>
+            <div id="singleMode">
+                <div class="qhead"><span id="progress">問題 1 / 10</span></div>
+                <div class="question" id="prompt"></div>
+                <div class="choices" id="choices"></div>
+                <div class="actions"><button class="secondary" id="prevQ" type="button">← 前の問題</button><button id="next">回答する</button><button class="secondary" id="gradeNow" type="button">ここまでで採点する</button><button class="secondary" id="quit">中断</button>
+                </div>
+                <p class="muted" id="quizMessage"></p>
+            </div>
+            <div id="batchMode" class="hidden">
+                <div class="qhead"><span id="batchProgress"></span><span class="pill" id="batchModeLabel"></span></div>
+                <p class="muted" id="batchInstruction"></p>
+                <div id="batchQuestions"></div>
+                <section id="choicePoolSection" class="choice-pool-section hidden">
+                    <h3>共通の選択肢</h3>
+                    <ol id="choicePool" class="choice-pool"></ol>
+                </section>
+                <div class="actions"><button id="submitBatch">ここまでで採点する</button><button class="secondary"
+                        id="quitBatch">中断</button></div>
+                <p class="muted" id="batchMessage"></p>
+            </div>
+        </section>
+        <section class="card hidden" id="result">
+            <h2 class="section-title" id="resultUnit">今回の結果</h2>
+            <div class="score" id="score"></div>
+            <p class="muted" id="saveStatus" role="status"></p>
+            <div id="feedback"></div>
+            <div class="actions"><button id="again">もう一度挑戦</button><button class="secondary" id="back">マイページに戻る</button>
+            </div>
+        </section>
+        <section class="card hidden" id="teacher">
+            <h2 class="section-title">このブラウザの結果一覧</h2>
+            <div class="actions"><button class="secondary" id="csv">CSVを書き出す</button><button class="secondary" id="hideTeacher">閉じる</button></div>
+            <div class="tablewrap" style="margin-top:14px">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>日時</th>
+                            <th>学年・クラス</th>
+                            <th>番号</th>
+                            <th>問題セット</th>
+                            <th>得点</th>
+                        </tr>
+                    </thead>
+                    <tbody id="records"></tbody>
+                </table>
+            </div>
+        </section>
+        <div id="appDialog" class="app-dialog hidden" role="presentation">
+            <section class="app-dialog-card" role="dialog" aria-modal="true" aria-labelledby="appDialogTitle" aria-describedby="appDialogMessage">
+                <h2 id="appDialogTitle">確認</h2>
+                <p id="appDialogMessage"></p>
+                <div class="actions">
+                    <button class="secondary hidden" id="appDialogCancel" type="button">キャンセル</button>
+                    <button id="appDialogOk" type="button">OK</button>
+                </div>
+            </section>
+        </div>
+        <div id="loadingOverlay" class="loading-overlay hidden" role="status" aria-live="polite">
+            <div class="loading-card"><div class="loading-spinner"></div><div class="loading-text" id="loadingText">読み込み中…</div></div>
+        </div>
+        <div id="quitDialog" class="quit-dialog hidden" role="presentation">
+            <section class="quit-dialog-card" role="dialog" aria-modal="true" aria-labelledby="quitDialogTitle"
+                aria-describedby="quitDialogMessage">
+                <h2 id="quitDialogTitle">テストを中断しますか？</h2>
+                <p id="quitDialogMessage">ここまでの回答は採点・保存されず、マイページに戻ります。</p>
+                <div class="actions">
+                    <button class="secondary" id="cancelQuit" type="button">テストを続ける</button>
+                    <button class="danger" id="confirmQuit" type="button">中断してマイページへ</button>
+                </div>
+            </section>
+        </div>
+        </div>
+    </main>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="./firebase-config.js"></script>
+    <script src="./school/schools.js"></script>
+    <script>window.questionBank = [];   // 先生がログインしたときに、管理画面で作ったテンプレート（Firestoreのtemplates）から読み込みます</script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="../firebase-config.js"></script>
+    <script src="./school/schools.js"></script>
+    <script src="../shared/common.js"></script>
+    <script>window.questionBank = [];   // 先生がログインしたときに、管理画面で作ったテンプレート（Firestoreのtemplates）から読み込みます</script>
+    <script>
+        let activeSchool = null;
+        let activeSchoolConfig = null;
+        let activeAccount = null;
+        let activeClass = null;
+        let questions = [];
+        let answers = [];
+        let userAnswers = [];
+        let sharedChoicePool = [];
+        let selectedChoiceNumbers = [];
+        let questionIndex = 0;
+        let questionMode = 'single';
+        let schoolScript = null;
+        let availableQuestionSets = [];
+        let selectedQuestionSet = null;
+        let viewMode = '';
+        let restoringLogin = false;
+        let selectedSourceQuestionIndexes = new Set();
+
+        function shuffle(items) {
+            const a = [...items];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        function historyKey() {
+            return `term_quiz_demo_records_v1::${activeSchool?.id || 'unknown'}`;
+        }
+
+        // 先生が公開した問題セット＝Firestoreの questionSets（生徒にも先生にも読み込む）
+        let remoteQuestions = [];
+        let remoteLoaded = false;   // 問題セットは、CBTテストを開くときに1回だけ読む（I1だけ使う人は読まない）
+        async function ensureRemote() { if (!remoteLoaded) { remoteQuestions = await loadRemoteQuestions(); remoteLoaded = true; } }
+        async function loadRemoteQuestions() {
+            if (!db) return [];
+            try {
+                const snap = await db.collection('questionSets').get();
+                const out = [];
+                snap.forEach((doc) => {
+                    const set = doc.data();
+                    (set.questions || []).forEach((item) => out.push({
+                        c: item.c || set.unit || set.subject || '', setId: doc.id, setTitle: set.setTitle, subject: set.subject || '',
+                        unit: set.unit || '', targets: set.targets || [], type: set.type, q: item.q, a: item.a,
+                        k: item.k || 0, releaseAt: set.releaseAt || '', createdBy: set.createdBy || '', remote: true,
+                    }));
+                });
+                return out;
+            } catch {
+                return [];
+            }
+        }
+
+        // 管理画面（Apps Script）で作った「テンプレート」＝Firestoreの templates（先生だけが読める）
+        let templateList = [];
+        async function loadTemplates() {
+            templateList = [];
+            window.questionBank = [];
+            if (!db) return;
+            try {
+                const snap = await db.collection('templates').get();
+                snap.forEach((doc) => {
+                    const t = doc.data();
+                    templateList.push({ id: doc.id, title: t.setTitle || '', subject: t.subject || '', unit: t.unit || '', count: (t.questions || []).length });
+                    (t.questions || []).forEach((item) => window.questionBank.push({
+                        c: item.c || t.unit || t.subject || '', q: item.q, a: item.a, k: item.k || 0,
+                        subject: t.subject || '未設定', unit: t.unit || item.c || '', template: t.setTitle || '',
+                    }));
+                });
+                templateList.sort((x, y) => x.subject.localeCompare(y.subject, 'ja') || x.title.localeCompare(y.title, 'ja'));
+            } catch {
+                templateList = [];
+            }
+        }
+
+        function getCustomQuestions() {
+            return remoteQuestions;
+        }
+
+        function hideViews() {
+            document.body.classList.remove('auth-mode');
+            ['roleChooser', 'profile', 'quiz', 'result', 'teacher', 'teacherDashboard'].forEach((id) => {
+                $(id).classList.add('hidden');
+            });
+        }
+
+        function loadSchoolConfig() {
+            const info = (window.SCHOOL_LIST || [])[0];
+            return new Promise((resolve, reject) => {
+                if (!info) return reject(new Error('school'));
+                window.SCHOOL_DATA = null;
+                const script = document.createElement('script');
+                script.src = `./school/${encodeURIComponent(info.file)}`;
+                script.onload = () => {
+                    script.remove();
+                    window.SCHOOL_DATA && window.SCHOOL_DATA.id === info.id ? resolve(window.SCHOOL_DATA) : reject(new Error('school'));
+                };
+                script.onerror = () => { script.remove(); reject(new Error('school')); };
+                document.head.appendChild(script);
+            });
+        }
+
+        function whoLabel() {
+            return [activeAccount.grade, activeAccount.className,
+                activeAccount.name ? `${activeAccount.name}先生` : ''].filter(Boolean).join(' ');
+        }
+
+
+        function showRoleChooser() {
+            hideViews();
+            document.body.classList.add('auth-mode');
+            viewMode = '';
+            $('roleChooser').classList.remove('hidden');
+            $('roleChooserWho').textContent = nameLabel(activeAccount);
+            const hasUrl = Boolean((window.ADMIN_PAGE_URL || '').trim());
+            $('chooseAdmin').disabled = !hasUrl;
+            $('chooserMessage').textContent = hasUrl ? '' : '管理画面のURLが未設定です（firebase-config.js の ADMIN_PAGE_URL に、Apps Scriptのウェブアプリ URL を入れてください）。';
+        }
+
+        async function enterTeacher() {
+            viewMode = 'teacher';
+            await ensureRemote();
+            await loadTemplates();
+            hideViews();
+            $('teacherDashboard').classList.remove('hidden');
+            showTeacherMenu();
+            $('signedInTeacher').textContent = whoLabel() || '教員';
+            populateTargetDepartmentList();
+            populateSubjectOptions();
+            populateUnitList();
+            populateSourceQuestionList();
+            renderTeacherQuestions();
+            renderTeacherRecords();
+        }
+
+        async function enterStudent() {
+            viewMode = 'student';
+            await ensureRemote();
+            hideViews();
+            $('profile').classList.remove('hidden');
+            $('signedInStudent').textContent = nameLabel(activeAccount);
+            populateStudentQuestionSets();
+        }
+
+        $('chooseTeacher').onclick = () => { $('chooseTeacher').disabled = true; showLoading('読み込み中…'); enterTeacher().finally(() => { hideLoading(); $('chooseTeacher').disabled = false; }); };
+        $('chooseStudent').onclick = () => { showLoading('読み込み中…'); enterStudent().finally(hideLoading); };
+        $('chooseAdmin').onclick = () => {
+            const url = (window.ADMIN_PAGE_URL || '').trim();
+            if (url) window.open(url, '_blank', 'noopener');
+        };
+
+        function studentProfile() {
+            return {
+                grade: activeAccount.grade,
+                className: activeAccount.className,
+                number: activeAccount.attendanceNumber,
+                userId: activeAccount.userId,
+                questionSet: selectedQuestionSet?.title || '—',
+            };
+        }
+
+        function populateStudentQuestionSets() {
+            const customQuestions = getCustomQuestions();
+            const setMap = new Map();
+
+            customQuestions.forEach((question) => {
+                if (!question.setTitle || !question.type || (question.releaseAt && new Date(question.releaseAt) > new Date())) return;
+                if (Array.isArray(question.targets) && question.targets.length > 0) {
+                    const isForStudent = question.targets.some((target) => (
+                        target.grade === activeAccount?.grade && target.departments.includes(activeAccount?.className)
+                    ));
+                    if (!isForStudent) return;
+                }
+                const key = `${question.setTitle}::${question.type}`;
+                if (!setMap.has(key)) {
+                    setMap.set(key, {
+                        title: question.setTitle,
+                        type: question.type,
+                        subject: question.subject || '',
+                        unit: question.unit || '',
+                        questions: [],
+                    });
+                }
+                setMap.get(key).questions.push(question);
+            });
+            availableQuestionSets = [...setMap.values()];
+
+            const emptyMessage = customQuestions.length === 0
+                ? 'まだ問題セットが作成されていません'
+                : '公開中の問題セットはありません';
+            selectedQuestionSet = null;
+            $('questionSetList').innerHTML = availableQuestionSets.length
+                ? availableQuestionSets.map((set, index) => `
+                    <button class="question-set-card" type="button" data-set-index="${index}">
+                        <span class="question-set-title">${escapeHtml(set.title)}</span>
+                        <span class="question-set-meta">${escapeHtml([set.subject, set.unit].filter(Boolean).join(' ・ '))}</span>
+                        <span class="question-set-meta">${set.questions.length}問 ・ ${set.type === 'fill' ? '入力式' : set.type === 'individual' ? '1問ずつ（各問4択）' : '共通選択肢式'}</span>
+                        <span class="question-set-action">このセットを開始 →</span>
+                    </button>
+                `).join('')
+                : `<p class="empty-question-sets">${emptyMessage}</p>`;
+        }
+
+        function startQuestionSet(setIndex) {
+            selectedQuestionSet = availableQuestionSets[setIndex] || null;
+            const availableQuestions = selectedQuestionSet?.questions || [];
+
+            if (availableQuestions.length === 0) {
+                $('questionSetList').insertAdjacentHTML('afterbegin', '<p class="empty-question-sets">この問題セットには出題できる問題がありません。</p>');
+                return;
+            }
+
+            questionMode = selectedQuestionSet.type === 'fill' ? 'fill' : selectedQuestionSet.type === 'individual' ? 'single' : 'listChoice';
+            questions = shuffle(availableQuestions);   // 毎回ランダムな順番で出題
+            answers = [];
+            userAnswers = [];
+            singleOptions = [];
+            questionIndex = 0;
+            $('profile').classList.add('hidden');
+            $('quiz').classList.remove('hidden');
+            $('quizUnit').textContent = selectedQuestionSet.unit || selectedQuestionSet.title || '';
+            $('resultUnit').textContent = (selectedQuestionSet.unit || selectedQuestionSet.title) ? `${selectedQuestionSet.unit || selectedQuestionSet.title}：今回の結果` : '今回の結果';
+
+            if (questionMode === 'single') {
+                $('singleMode').classList.remove('hidden');
+                $('batchMode').classList.add('hidden');
+                drawSingleQuestion();
+            } else {
+                $('singleMode').classList.add('hidden');
+                $('batchMode').classList.remove('hidden');
+                drawQuestionList();
+            }
+        }
+
+        $('questionSetList').addEventListener('click', (event) => {
+            const button = event.target.closest('[data-set-index]');
+            if (button) startQuestionSet(Number(button.dataset.setIndex));
+        });
+
+        let singleOptions = [];   // 問題ごとの選択肢の並び（前の問題に戻っても同じ並びにする）
+        function drawSingleQuestion() {
+            const question = questions[questionIndex];
+            if (!singleOptions[questionIndex]) {
+                singleOptions[questionIndex] = shuffle(question.a.map((text, index) => ({
+                    text,
+                    isCorrect: index === question.k,
+                })));
+            }
+            const options = singleOptions[questionIndex];
+            const previous = userAnswers[questionIndex];
+            $('progress').textContent = `問題 ${questionIndex + 1} / ${questions.length}`;
+            $('prompt').textContent = question.q;
+            $('quizMessage').textContent = '';
+            $('choices').innerHTML = options.map((option, index) => `
+                <label class="choice">
+                    <input type="radio" name="singleAnswer" value="${option.isCorrect ? '1' : '0'}" data-text="${escapeHtml(option.text)}" autocomplete="off"${previous !== undefined && previous === option.text ? ' checked' : ''}>
+                    ${String.fromCharCode(65 + index)}. ${escapeHtml(option.text)}
+                </label>
+            `).join('');
+            $('next').textContent = questionIndex === questions.length - 1 ? '採点する' : '回答する';
+            $('prevQ').classList.toggle('hidden', questionIndex === 0);
+        }
+
+        $('next').onclick = () => {
+            const selected = document.querySelector('input[name="singleAnswer"]:checked');
+            if (!selected) {
+                $('quizMessage').textContent = '選択肢を選んでください。';
+                return;
+            }
+            answers[questionIndex] = selected.value === '1';
+            userAnswers[questionIndex] = selected.dataset.text;
+            questionIndex += 1;
+            if (questionIndex < questions.length) drawSingleQuestion();
+            else finishQuiz();
+        };
+
+        $('prevQ').onclick = () => {
+            if (questionIndex === 0) return;
+            questionIndex -= 1;
+            drawSingleQuestion();
+        };
+
+        // 入力式：Enterで次の問題の解答欄へ、Shift+Enterで前の問題の解答欄へ
+        $('batchQuestions').addEventListener('keydown', (event) => {
+            const input = event.target.closest('.answer-input');
+            if (!input || event.key !== 'Enter' || event.isComposing) return;
+            event.preventDefault();
+            const inputs = [...document.querySelectorAll('.answer-input')];
+            const target = inputs[inputs.indexOf(input) + (event.shiftKey ? -1 : 1)];
+            if (target) { target.focus(); target.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+        });
+
+        function drawQuestionList() {
+            const isFillIn = questionMode === 'fill';
+            $('batchProgress').textContent = `${questions.length}問をまとめて出題`;
+            $('batchModeLabel').textContent = isFillIn ? '回答を入力' : '共通の選択肢から選ぶ';
+            $('batchMessage').textContent = '';
+            $('batchInstruction').textContent = isFillIn
+                ? '各問題の欄に回答を入力し、最後にまとめて採点します。'
+                : '問題文を上から読み、各問に選択肢の記号を記入してください。選択肢は下の共通一覧にあります。';
+            $('choicePoolSection').classList.toggle('hidden', isFillIn);
+
+            if (isFillIn) {
+                $('batchQuestions').innerHTML = questions.map((question, index) => `
+                    <article class="batch-item">
+                        <div class="batch-item-heading">
+                            <strong>${index + 1}. ${escapeHtml(question.q)}</strong>
+                        </div>
+                        <input class="answer-input" type="text" data-answer-index="${index}" autocomplete="off" placeholder="回答を入力">
+                    </article>
+                `).join('');
+                return;
+            }
+
+            sharedChoicePool = shuffle([...new Set(questions.flatMap((question) => question.a))]);
+            selectedChoiceNumbers = questions.map(() => null);
+            $('batchQuestions').innerHTML = questions.map((question, index) => `
+                <article class="batch-item batch-item-with-answer">
+                    <strong>${index + 1}. ${escapeHtml(question.q)}</strong>
+                    <div class="number-picker" data-answer-index="${index}">
+                        <button class="secondary number-picker-toggle" type="button" aria-expanded="false" aria-controls="answerOptions${index}">番号を選択</button>
+                        <div class="number-picker-options hidden" id="answerOptions${index}" role="group" aria-label="${index + 1}問目の選択肢番号"></div>
+                    </div>
+                </article>
+            `).join('');
+            $('choicePool').innerHTML = sharedChoicePool.map((choice) => `
+                <li>${escapeHtml(choice)}</li>
+            `).join('');
+
+            renderAnswerNumberPickers();
+        }
+
+        function renderAnswerNumberPickers() {
+            document.querySelectorAll('.number-picker').forEach((picker) => {
+                const questionIndex = Number(picker.dataset.answerIndex);
+                const ownChoice = selectedChoiceNumbers[questionIndex];
+                const usedByOthers = new Set(selectedChoiceNumbers.filter((choice, index) => (
+                    index !== questionIndex && choice !== null
+                )));
+                const options = sharedChoicePool.map((_, index) => index)
+                    .filter((index) => !usedByOthers.has(index));
+                picker.querySelector('.number-picker-toggle').textContent = ownChoice === null
+                    ? '番号を選択'
+                    : `選択中：${ownChoice + 1}. ${sharedChoicePool[ownChoice]}`;
+                picker.querySelector('.number-picker-options').innerHTML = options.map((index) => `
+                    <button class="number-picker-option ${ownChoice === index ? 'is-selected' : ''}" type="button" data-choice-index="${index}" aria-pressed="${ownChoice === index}">${index + 1}. ${escapeHtml(sharedChoicePool[index])}</button>
+                `).join('');
+            });
+        }
+
+        $('batchQuestions').addEventListener('click', (event) => {
+            const toggle = event.target.closest('.number-picker-toggle');
+            if (toggle) {
+                const currentOptions = toggle.nextElementSibling;
+                document.querySelectorAll('.number-picker-options').forEach((options) => {
+                    if (options !== currentOptions) {
+                        options.classList.add('hidden');
+                        options.previousElementSibling.setAttribute('aria-expanded', 'false');
+                    }
+                });
+                const willOpen = currentOptions.classList.contains('hidden');
+                currentOptions.classList.toggle('hidden', !willOpen);
+                toggle.setAttribute('aria-expanded', String(willOpen));
+                return;
+            }
+
+            const option = event.target.closest('.number-picker-option');
+            if (!option) return;
+            const picker = option.closest('.number-picker');
+            selectedChoiceNumbers[Number(picker.dataset.answerIndex)] = Number(option.dataset.choiceIndex);
+            renderAnswerNumberPickers();
+            document.querySelectorAll('.number-picker-options').forEach((options) => options.classList.add('hidden'));
+            document.querySelectorAll('.number-picker-toggle').forEach((button) => button.setAttribute('aria-expanded', 'false'));
+        });
+
+        // 途中までの採点：答えた問題だけを採点する（どの問題タイプでも同じ）。答えていない問題は採点に入らない
+        async function gradeAnswered(items) {   // items: [{ index, text, ok }]
+            if (!items.length) return false;
+            const left = questions.length - items.length;
+            if (left > 0 && !await showConfirm(`まだ答えていない${left}問は、採点に入りません。ここまでの${items.length}問を採点しますか？`, 'ここまでで採点')) return false;
+            questions = items.map((it) => questions[it.index]);
+            userAnswers = items.map((it) => it.text);
+            answers = items.map((it) => it.ok);
+            finishQuiz();
+            return true;
+        }
+
+        $('submitBatch').onclick = async () => {
+            const items = [];
+            if (questionMode === 'fill') {
+                [...document.querySelectorAll('.answer-input')].forEach((input, index) => {
+                    if (input.value.trim()) items.push({ index, text: input.value.trim(), ok: isFillCorrect(input.value, questions[index].a[questions[index].k]) });
+                });
+            } else {
+                selectedChoiceNumbers.forEach((selectedIndex, index) => {
+                    if (selectedIndex === null || selectedIndex < 0) return;
+                    items.push({ index, text: sharedChoicePool[selectedIndex], ok: normalizeAnswer(sharedChoicePool[selectedIndex]) === normalizeAnswer(questions[index].a[questions[index].k]) });
+                });
+            }
+            if (!items.length) { $('batchMessage').textContent = '1問以上、答えを入力・選択してください。'; return; }
+            $('batchMessage').textContent = '';
+            await gradeAnswered(items);
+        };
+
+        $('gradeNow').onclick = async () => {
+            const items = [];
+            answers.forEach((ok, index) => { if (ok !== undefined && index !== questionIndex) items.push({ index, text: userAnswers[index], ok }); });
+            const selected = document.querySelector('input[name="singleAnswer"]:checked');
+            if (selected) items.push({ index: questionIndex, text: selected.dataset.text, ok: selected.value === '1' });
+            items.sort((x, y) => x.index - y.index);
+            if (!items.length) { $('quizMessage').textContent = '1問以上、答えを選んでください。'; return; }
+            $('quizMessage').textContent = '';
+            await gradeAnswered(items);
+        };
+
+        function normalizeAnswer(value) {
+            return String(value).normalize('NFKC').trim().toLocaleLowerCase().replace(/\s/g, '');
+        }
+
+        // 正解に（ ）がある場合は、全体・かっこの外・かっこの中のどれでも正解にする
+        function isFillCorrect(input, correct) {
+            const given = normalizeAnswer(input);
+            const full = normalizeAnswer(correct);
+            if (given === full) return true;
+            if (!/\(.*\)/.test(full)) return false;
+            const inside = [...full.matchAll(/\(([^()]*)\)/g)].map((m) => m[1]);
+            const outside = full.replace(/\([^()]*\)/g, '');
+            return [outside, ...inside].some((v) => v && v === given);
+        }
+
+        function finishQuiz() {
+            hideViews();
+            $('result').classList.remove('hidden');
+            const correctCount = answers.filter(Boolean).length;
+            $('score').textContent = `${correctCount} / ${questions.length} 問正解`;
+            $('feedback').innerHTML = questions.map((question, index) => `
+                <div class="feedback ${answers[index] ? 'good' : 'bad'}">
+                    <b>${index + 1}. ${answers[index] ? '正解' : '不正解'}</b>
+                    <div>あなたの答え：${escapeHtml(userAnswers[index] || '')}</div>
+                    <div>正解：${escapeHtml(question.a[question.k])}</div>
+                </div>
+            `).join('');
+
+            const records = JSON.parse(localStorage.getItem(historyKey()) || '[]');
+            records.unshift({
+                date: new Date().toLocaleString('ja-JP'),
+                ...studentProfile(),
+                mode: questionMode,
+                score: correctCount,
+                total: questions.length,
+            });
+            localStorage.setItem(historyKey(), JSON.stringify(records));
+            saveResultToCloud(correctCount);
+        }
+
+        // 記録をFirestoreに保存（先生が「生徒の記録を見る」で全員分を見られる）
+        function saveResultToCloud(correctCount) {
+            const status = $('saveStatus');
+            status.textContent = '記録を保存しています…';
+            const rec = {
+                uid: auth && auth.currentUser ? auth.currentUser.uid : '',
+                userId: activeAccount.userId, grade: activeAccount.grade, className: activeAccount.className,
+                attendanceNumber: String(activeAccount.attendanceNumber || ''),
+                setTitle: selectedQuestionSet?.title || '', setId: questions[0]?.setId || '',
+                subject: selectedQuestionSet?.subject || '', unit: selectedQuestionSet?.unit || '',
+                mode: questionMode, score: correctCount, total: questions.length,
+                at: new Date().toISOString(),
+                // 出題された順番ごとの、問題・本人の答え・正解・正誤
+                details: questions.map((question, index) => ({
+                    n: index + 1, c: question.c || '', q: question.q,
+                    you: String(userAnswers[index] ?? ''), ans: String(question.a[question.k]), ok: !!answers[index],
+                })),
+            };
+            if (!db || !rec.uid) { status.textContent = '記録を先生に送れませんでした（ログイン状態を確認してください）。'; return; }
+            setInlineLoading(status, '記録を先生に送っています…');
+            db.collection('results').add(rec)
+                .then(() => { status.textContent = '記録を先生に送りました。'; })
+                .catch(() => { status.textContent = '記録を先生に送れませんでした。電波の良いところでもう一度解くか、先生に伝えてください。'; });
+        }
+
+
+        function populateTargetDepartmentList() {
+            $('targetDepartmentList').innerHTML = activeSchoolConfig.grades.map((grade) => {
+                const departments = grade.departments || grade.classes || [];
+                return `
+                    <fieldset class="target-grade-group">
+                        <legend>${escapeHtml(grade.name)}</legend>
+                        <div class="target-department-options">
+                            ${departments.map((department) => `
+                                <label class="target-department-option">
+                                    <input class="target-department-checkbox" type="checkbox" data-grade="${escapeHtml(grade.name)}" data-department="${escapeHtml(department.name)}" autocomplete="off">
+                                    <span>${escapeHtml(department.name)}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </fieldset>
+                `;
+            }).join('');
+        }
+
+        function getSelectedTargets() {
+            const targetsByGrade = new Map();
+            document.querySelectorAll('.target-department-checkbox:checked').forEach((checkbox) => {
+                const grade = checkbox.dataset.grade;
+                if (!targetsByGrade.has(grade)) targetsByGrade.set(grade, []);
+                targetsByGrade.get(grade).push(checkbox.dataset.department);
+            });
+            return [...targetsByGrade.entries()].map(([grade, departments]) => ({ grade, departments }));
+        }
+
+        function formatTargets(targets = []) {
+            return targets.map((target) => `${target.grade} ${target.departments.join('・')}`).join('、') || '対象未設定';
+        }
+
+        function populateSubjectOptions() {
+            const subjects = [...new Set(window.questionBank.map((question) => question.subject).filter(Boolean))];
+            $('newSubject').innerHTML = '<option value="">教科を選択</option>' + subjects.map((subject) =>
+                `<option>${escapeHtml(subject)}</option>`).join('');
+        }
+
+        function populateUnitList() {
+            const selectedSubject = $('newSubject').value;
+            const unitSelect = $('newUnit');
+            if (!selectedSubject) {
+                unitSelect.disabled = true;
+                unitSelect.innerHTML = '<option value="__all__">先に教科を選択してください</option>';
+                return;
+            }
+            const units = [...new Set(window.questionBank
+                .filter((question) => (question.subject || '情報処理') === selectedSubject)
+                .map((question) => question.unit || question.c)
+                .filter(Boolean))];
+            unitSelect.disabled = false;
+            unitSelect.innerHTML = '<option value="__all__">すべて</option>' + units.map((unit) =>
+                `<option value="${escapeHtml(unit)}">${escapeHtml(unit)}</option>`
+            ).join('');
+        }
+
+        function getMatchingSourceQuestions() {
+            const selectedSubject = $('newSubject').value;
+            const selectedUnit = $('newUnit').value;
+            return window.questionBank
+                .map((question, index) => ({ question, index }))
+                .filter(({ question }) => {
+                    const subject = question.subject || '情報処理';
+                    const unit = question.unit || question.c;
+                    return (!selectedSubject || subject === selectedSubject) && (selectedUnit === '__all__' || unit === selectedUnit);
+                });
+        }
+
+        function populateSourceQuestionList() {
+            const matches = getMatchingSourceQuestions();
+            $('sourceQuestionList').innerHTML = matches.map(({ question, index }, matchIndex) => `
+                <label class="source-question">
+                    <input type="checkbox" value="${index}" ${selectedSourceQuestionIndexes.has(index) ? 'checked' : ''} autocomplete="off">
+                    <span><b>${matchIndex + 1}. ${escapeHtml(question.c)}</b><br>${escapeHtml(question.q)}</span>
+                </label>
+            `).join('') || '<p class="muted">選択した教科・単元に該当する登録済み問題がありません。</p>';
+            $('sourceQuestionList').querySelectorAll('input[type="checkbox"]').forEach((input) => {
+                input.addEventListener('change', () => {
+                    const index = Number(input.value);
+                    if (input.checked) selectedSourceQuestionIndexes.add(index);
+                    else selectedSourceQuestionIndexes.delete(index);
+                    $('selectedQuestionCount').textContent = `${selectedSourceQuestionIndexes.size}問選択中`;
+                });
+            });
+            $('selectedQuestionCount').textContent = `${selectedSourceQuestionIndexes.size}問選択中`;
+        }
+
+        $('selectAllQuestions').addEventListener('click', () => {
+            const matches = getMatchingSourceQuestions();
+            matches.forEach(({ index }) => selectedSourceQuestionIndexes.add(index));
+            $('authorMessage').textContent = `${matches.length}問をすべて選択しました。`;
+            populateSourceQuestionList();
+        });
+        $('clearAllQuestions').addEventListener('click', () => {
+            selectedSourceQuestionIndexes.clear();
+            $('authorMessage').textContent = '';
+            populateSourceQuestionList();
+        });
+
+        $('randomSelectQuestions').addEventListener('click', () => {
+            const matches = getMatchingSourceQuestions();
+            const count = Number($('randomQuestionCount').value);
+            if (!Number.isInteger(count) || count < 1 || count > matches.length) {
+                $('authorMessage').textContent = `1から${matches.length}の範囲で問題数を指定してください。`;
+                return;
+            }
+            selectedSourceQuestionIndexes.clear();
+            shuffle(matches).slice(0, count).forEach(({ index }) => selectedSourceQuestionIndexes.add(index));
+            $('authorMessage').textContent = `${count}問をランダムに選択しました。`;
+            populateSourceQuestionList();
+        });
+
+        function updateReleaseFields() {
+            $('delaySettings').classList.toggle('hidden', $('releaseMode').value !== 'delay');
+            $('datetimeSettings').classList.toggle('hidden', $('releaseMode').value !== 'datetime');
+        }
+        function updateSourceQuestionsFromSubjectUnit() {
+            selectedSourceQuestionIndexes.clear();
+            populateUnitList();
+            populateSourceQuestionList();
+        }
+        $('newSubject').addEventListener('change', updateSourceQuestionsFromSubjectUnit);
+        populateUnitList();
+        populateSourceQuestionList();
+        $('newUnit').addEventListener('change', () => {
+            selectedSourceQuestionIndexes.clear();
+            const unit = $('newUnit').value;
+            if (unit && unit !== '__all__' && !$('newQuestionSet').value.trim()) $('newQuestionSet').value = `${$('newSubject').value}：${unit}`;
+            populateSourceQuestionList();
+        });
+        $('releaseMode').addEventListener('change', updateReleaseFields);
+
+        function renderTeacherQuestions() {
+            const questionsForSchool = getCustomQuestions();
+            const setMap = new Map();
+            questionsForSchool.forEach((question) => {
+                const key = `${question.setTitle}::${question.type}`;
+                if (!setMap.has(key)) setMap.set(key, { ...question, count: 0 });
+                setMap.get(key).count += 1;
+            });
+            const sets = [...setMap.values()];
+            $('teacherQuestionCount').textContent = `${questionsForSchool.length}問 / ${sets.length}セット`;
+            $('teacherQuestionList').innerHTML = sets.length
+                ? sets.map((set) => {
+                    const releaseAt = set.releaseAt ? new Date(set.releaseAt) : null;
+                    const isScheduled = releaseAt && releaseAt > new Date();
+                    const status = isScheduled ? `公開予定：${releaseAt.toLocaleString('ja-JP')}` : '公開中';
+                    return `<li><div><b>${escapeHtml(set.setTitle)}</b> / ${escapeHtml(set.subject || '教科未設定')}・${escapeHtml(set.unit || '単元未設定')} / ${escapeHtml(formatTargets(set.targets))} / ${set.type === 'fill' ? '入力式' : set.type === 'individual' ? '1問ずつ（各問4択）' : '共通選択肢式'} / ${set.count}問 / ${status}</div><button class="danger" type="button" data-delete-set="${escapeHtml(set.setId)}" data-delete-title="${escapeHtml(set.setTitle)}">このセットを削除</button></li>`;
+                }).join('')
+                : '<li>まだ作成した問題はありません。</li>';
+        }
+
+        let cloudRecords = [];
+        async function renderTeacherRecords() {
+            const info = $('teacherRecordsInfo');
+            setInlineLoading(info, '読み込み中…');
+            try {
+                // 管理者は全員分。先生は、自分の学年・学科の分だけ（Firestoreのルールでも同じ範囲に制限されている）
+                const isAdmin = activeAccount.role === 'admin';
+                const snap = await (isAdmin
+                    ? db.collection('results').orderBy('at', 'desc').limit(3000)
+                    : db.collection('results').where('grade', '==', activeAccount.grade).where('className', '==', activeAccount.className)).get();
+                cloudRecords = [];
+                snap.forEach((doc) => cloudRecords.push({ ...doc.data(), _id: doc.id }));
+                cloudRecords.sort((x, y) => String(y.at).localeCompare(String(x.at)));
+                $('recordGradeFilter').parentElement.classList.toggle('hidden', !isAdmin);
+                if (!isAdmin) $('recordGradeFilter').value = '';
+                info.textContent = isAdmin ? '' : `表示範囲：${activeAccount.grade} ${activeAccount.className}`;
+            } catch {
+                cloudRecords = [];
+                info.textContent = '記録を読み込めませんでした（Firestoreのルールが更新されているか確認してください）。';
+            }
+            const current = $('recordSetFilter').value;
+            const titles = [...new Set(cloudRecords.map((r) => r.setTitle).filter(Boolean))].sort((x, y) => x.localeCompare(y, 'ja'));
+            $('recordSetFilter').innerHTML = '<option value="">すべて</option>' + titles.map((t) =>
+                `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+            $('recordSetFilter').value = titles.includes(current) ? current : '';
+            drawTeacherRecords();
+        }
+
+        function filteredRecords() {
+            const set = $('recordSetFilter').value, grade = $('recordGradeFilter').value;
+            return cloudRecords.filter((r) => (!set || r.setTitle === set) && (!grade || r.grade === grade));
+        }
+
+        function drawTeacherRecords() {
+            const records = filteredRecords();
+            const fmt = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : d.toLocaleString('ja-JP'); };
+            $('teacherRecords').innerHTML = records.length
+                ? records.map((record, i) => `
+                    <tr class="record-row" data-rec="${i}" tabindex="0" style="cursor:pointer" title="タップすると詳細が開きます">
+                        <td>${escapeHtml(fmt(record.at))}</td>
+                        <td>${escapeHtml(record.grade)} ${escapeHtml(record.className)}</td>
+                        <td>${escapeHtml(Number(record.attendanceNumber) || record.attendanceNumber)}</td>
+                        <td>${escapeHtml(record.userId)}</td>
+                        <td>${escapeHtml(record.setTitle || '—')}</td>
+                        <td>${record.score}/${record.total}</td>
+                    </tr>
+                `).join('')
+                : '<tr><td colspan="6">記録はありません</td></tr>';
+        }
+
+        $('deleteAllRecords').addEventListener('click', async () => {
+            const list = [...cloudRecords];
+            const info = $('teacherRecordsInfo');
+            if (!list.length) { info.textContent = '削除する記録はありません。'; return; }
+            const scope = activeAccount.role === 'admin' ? '全学年・全学科' : `${activeAccount.grade} ${activeAccount.className}`;
+            if (!await showConfirm(`${scope}の生徒の記録 ${list.length}件を、すべて削除します。元に戻せません。よろしいですか？`, '記録を削除')) return;
+            $('deleteAllRecords').disabled = true;
+            setInlineLoading(info, '削除中…');
+            try {
+                for (let i = 0; i < list.length; i += 20) {
+                    await Promise.all(list.slice(i, i + 20).map((r) => db.collection('results').doc(r._id).delete()));
+                }
+                await renderTeacherRecords();
+                $('teacherRecordsInfo').textContent = `${list.length}件の記録を削除しました。`;
+            } catch {
+                info.textContent = '削除できませんでした（Firestoreのルールを更新したか確認してください）。';
+                await renderTeacherRecords().catch(() => {});
+            }
+            $('deleteAllRecords').disabled = false;
+        });
+        const modeLabel = { fill: '入力式', single: '1問ずつ（各問4択）', listChoice: '共通選択肢式' };
+        function toggleRecordDetail(row) {
+            const next = row.nextElementSibling;
+            if (next && next.classList.contains('record-detail')) { next.remove(); return; }
+            const r = filteredRecords()[Number(row.dataset.rec)];
+            if (!r) return;
+            const d = Array.isArray(r.details) ? r.details : null;
+            const body = d
+                ? d.map((x) => `<div class="feedback ${x.ok ? 'good' : 'bad'}"><b>${escapeHtml(x.n)}. ${x.ok ? '正解' : '不正解'}</b>：${escapeHtml(x.q)}<div>生徒の答え：${escapeHtml(x.you)}</div><div>正解：${escapeHtml(x.ans)}</div></div>`).join('')
+                : '<p class="muted">この記録には詳細がありません（古い記録です）。</p>';
+            const wrong = d ? d.filter((x) => !x.ok).map((x) => x.n) : [];
+            row.insertAdjacentHTML('afterend', `<tr class="record-detail"><td colspan="6">
+                <p><b>${escapeHtml(r.setTitle || '—')}</b> ／ 形式：${escapeHtml(modeLabel[r.mode] || r.mode || '')} ／ ${r.score}/${r.total}</p>
+                ${d ? `<p>間違えた問題（出題順）：${wrong.length ? wrong.map((n) => n + '問目').join('、') : 'なし'}</p>` : ''}
+                ${body}</td></tr>`);
+        }
+        $('teacherRecords').addEventListener('click', (event) => {
+            const row = event.target.closest('.record-row');
+            if (row) toggleRecordDetail(row);
+        });
+        $('teacherRecords').addEventListener('keydown', (event) => {
+            const row = event.target.closest('.record-row');
+            if (row && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); toggleRecordDetail(row); }
+        });
+        $('recordSetFilter').addEventListener('change', drawTeacherRecords);
+        $('recordGradeFilter').addEventListener('change', drawTeacherRecords);
+        $('downloadTeacherRecords').addEventListener('click', () => {
+            const rows = [
+                ['日時', '学年', '学科', '出席番号', 'ユーザーID', '問題セット', '教科', '単元', '得点', '問題数'],
+                ...filteredRecords().map((r) => [r.at, r.grade, r.className, r.attendanceNumber, r.userId, r.setTitle, r.subject, r.unit, r.score, r.total]),
+            ];
+            const csv = '\uFEFF' + rows.map((row) => row.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+            link.download = 'student_results.csv';
+            link.click();
+            URL.revokeObjectURL(link.href);
+        });
+
+        function showTeacherMenu() {
+            $('teacherMenu').classList.remove('hidden');
+            ['teacherCreatePanel', 'teacherRecordsPanel', 'teacherCurrentQuestionsPanel'].forEach((id) => {
+                $(id).classList.add('hidden');
+            });
+        }
+
+        function showTeacherPanel(view) {
+            const panelByView = {
+                create: 'teacherCreatePanel',
+                records: 'teacherRecordsPanel',
+                current: 'teacherCurrentQuestionsPanel',
+            };
+            const panelId = panelByView[view];
+            if (!panelId) return;
+            $('teacherMenu').classList.add('hidden');
+            Object.values(panelByView).forEach((id) => $(id).classList.add('hidden'));
+            $(panelId).classList.remove('hidden');
+            if (view === 'records') renderTeacherRecords();
+            if (view === 'current') renderTeacherQuestions();
+        }
+
+        $('teacherMenu').addEventListener('click', (event) => {
+            const button = event.target.closest('[data-teacher-view]');
+            if (button) showTeacherPanel(button.dataset.teacherView);
+        });
+        $('teacherDashboard').addEventListener('click', (event) => {
+            if (event.target.closest('[data-teacher-menu]')) showTeacherMenu();
+        });
+        $('refreshTeacherRecords').addEventListener('click', renderTeacherRecords);
+        $('teacherQuestionList').addEventListener('click', async (event) => {
+            const button = event.target.closest('[data-delete-set]');
+            if (!button) return;
+            if (!await showConfirm(`「${button.dataset.deleteTitle}」を削除します。生徒の画面からも消えます。よろしいですか？`, '問題セットを削除')) return;
+            button.disabled = true;
+            showLoading('削除しています…');
+            try {
+                await db.collection('questionSets').doc(button.dataset.deleteSet).delete();
+                remoteQuestions = await loadRemoteQuestions();
+                renderTeacherQuestions();
+            } catch {
+                button.disabled = false;
+                await showAlert('削除できませんでした。もう一度試してください。', '削除できませんでした');
+            } finally { hideLoading(); }
+        });
+
+        $('questionForm').onsubmit = async (event) => {
+            event.preventDefault();
+            const type = $('newQuestionType').value;
+            const setTitle = $('newQuestionSet').value.trim();
+            const subject = $('newSubject').value.trim();
+            const unit = $('newUnit').value === '__all__' ? 'すべて' : $('newUnit').value.trim();
+            const targets = getSelectedTargets();
+            const selectedIndexes = [...selectedSourceQuestionIndexes].sort((a, b) => a - b);
+            if (!setTitle || !subject || !unit || targets.length === 0 || selectedIndexes.length === 0) {
+                $('authorMessage').textContent = '問題セット名・対象学年／学科・教科・単元を入力し、問題を1問以上選択してください。';
+                return;
+            }
+            if (type === 'individual' && selectedIndexes.some((index) => window.questionBank[index].a.length !== 4)) {
+                $('authorMessage').textContent = '1問ずつ出題（各問4択）では、選択するすべての問題に4つの選択肢が必要です。';
+                return;
+            }
+            if (getCustomQuestions().some((question) => question.setTitle === setTitle)) {
+                $('authorMessage').textContent = '同じ名前の問題セットがすでにあります。別の名前にしてください。';
+                return;
+            }
+
+            let releaseAt;
+            if ($('releaseMode').value === 'delay') {
+                const minutes = Number($('delayMinutes').value);
+                if (!Number.isFinite(minutes) || minutes < 1) {
+                    $('authorMessage').textContent = '公開までの分数を1以上で入力してください。';
+                    return;
+                }
+                releaseAt = new Date(Date.now() + minutes * 60_000).toISOString();
+            } else if ($('releaseMode').value === 'datetime') {
+                const date = new Date($('releaseDateTime').value);
+                if (!$('releaseDateTime').value || Number.isNaN(date.getTime()) || date <= new Date()) {
+                    $('authorMessage').textContent = '未来の公開日時を指定してください。';
+                    return;
+                }
+                releaseAt = date.toISOString();
+            } else {
+                releaseAt = new Date().toISOString();
+            }
+
+            const doc = {
+                setTitle, subject, unit, targets, type, releaseAt,
+                questions: selectedIndexes.map((index) => {
+                    const source = window.questionBank[index];
+                    return {
+                        c: source.c || '', q: source.q,
+                        a: type === 'fill' ? [source.a[source.k]] : [...source.a],
+                        k: type === 'fill' ? 0 : source.k,
+                    };
+                }),
+                createdBy: auth.currentUser.uid, createdByUserId: activeAccount.userId,
+                createdAt: new Date().toISOString(),
+            };
+            const submitButton = $('questionForm').querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            showLoading('公開しています…');
+            try {
+                await db.collection('questionSets').add(doc);
+                remoteQuestions = await loadRemoteQuestions();
+            } catch {
+                $('authorMessage').textContent = '保存できませんでした。通信とFirestoreのルール（更新済みか）を確認してください。';
+                return;
+            } finally {
+                hideLoading();
+                submitButton.disabled = false;
+            }
+            const scheduleLabel = $('releaseMode').value === 'now' ? '公開しました' : `公開予約しました（${new Date(releaseAt).toLocaleString('ja-JP')}）`;
+            $('authorMessage').textContent = `「${setTitle}」を${scheduleLabel}。`;
+            $('newQuestionSet').value = '';
+            $('newSubject').value = '';
+            populateUnitList();
+            document.querySelectorAll('.target-department-checkbox:checked').forEach((checkbox) => {
+                checkbox.checked = false;
+            });
+            selectedSourceQuestionIndexes.clear();
+            populateSourceQuestionList();
+            renderTeacherQuestions();
+        };
+
+        $('again').onclick = () => {
+            hideViews();
+            $('profile').classList.remove('hidden');
+        };
+        $('back').onclick = returnToStudentProfile;
+        function openQuitDialog() {
+            $('quitDialog').classList.remove('hidden');
+            $('cancelQuit').focus();
+        }
+
+        function closeQuitDialog() {
+            $('quitDialog').classList.add('hidden');
+        }
+
+        function returnToStudentProfile() {
+            closeQuitDialog();
+            selectedQuestionSet = null;
+            hideViews();
+            $('profile').classList.remove('hidden');
+            populateStudentQuestionSets();
+        }
+
+        $('quit').onclick = openQuitDialog;
+        $('quitBatch').onclick = openQuitDialog;
+        $('cancelQuit').onclick = closeQuitDialog;
+        $('confirmQuit').onclick = returnToStudentProfile;
+        $('quitDialog').addEventListener('click', (event) => {
+            if (event.target === $('quitDialog')) closeQuitDialog();
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && !$('quitDialog').classList.contains('hidden')) closeQuitDialog();
+        });
+
+        function renderRecords() {
+            const records = JSON.parse(localStorage.getItem(historyKey()) || '[]');
+            const visibleRecords = activeAccount?.role === 'teacher'
+                ? records
+                : records.filter((record) => record.userId === activeAccount?.userId);
+            $('records').innerHTML = visibleRecords.length
+                ? visibleRecords.map((record) => `
+                    <tr>
+                        <td>${escapeHtml(record.date)}</td>
+                        <td>${escapeHtml(record.grade)} ${escapeHtml(record.className)}</td>
+                        <td>${escapeHtml(record.number)}</td><td>${escapeHtml(record.questionSet || '全範囲')}</td>
+                        <td>${record.score}/${record.total}</td>
+                    </tr>
+                `).join('')
+                : '<tr><td colspan="5">記録はありません</td></tr>';
+        }
+        $('showTeacher').onclick = () => {
+            hideViews();
+            $('teacher').classList.remove('hidden');
+            renderRecords();
+        };
+        $('hideTeacher').onclick = () => {
+            hideViews();
+            $('profile').classList.remove('hidden');
+        };
+        $('csv').onclick = () => {
+            const records = JSON.parse(localStorage.getItem(historyKey()) || '[]');
+            const rows = [
+                ['日時', '学年', 'クラス', '出席番号', 'ユーザーID', '問題セット', '形式', '得点', '問題数'],
+                ...records.map((record) => [record.date, record.grade, record.className, record.number,
+                record.userId, record.questionSet, record.mode, record.score, record.total]),
+            ];
+            const csv = '\uFEFF' + rows.map((row) => row.map((value) => (
+                `"${String(value ?? '').replace(/"/g, '""')}"`
+            )).join(',')).join('\r\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${activeSchool.id}_results.csv`;
+            link.click();
+            URL.revokeObjectURL(url);
+        };
+
+
+        disableAutocomplete();
+
+        // ---- 起動：ログインは入口（ひとつ上のページ）で済ませる。ここでは、ログイン済みか確認するだけ ----
+        const HUB_URL = '../';
+        function backToHub() { showLoading('アプリの選択に戻ります…', true); location.href = HUB_URL + '#menu'; }
+        function goLogin() { location.replace(HUB_URL); }
+        document.addEventListener('click', (event) => {
+            if (event.target.closest('[data-to-prev]')) { if (activeAccount && activeAccount.role === 'admin' && viewMode) showRoleChooser(); else backToHub(); }
+        });
+        $('chooserBack').onclick = backToHub;
+
+        async function boot() {
+            if (!startFirebase()) { goLogin(); return; }
+            showLoading('読み込み中…', true);
+            auth.onAuthStateChanged(async (user) => {
+                await persistenceReady;
+                if (activeAccount) return;
+                if (!user) { goLogin(); return; }
+                try {
+                    let account = cachedAccount(user.uid);
+                    if (!account) {
+                        const snap = await db.collection('users').doc(user.uid).get();
+                        if (!snap.exists || snap.data().mustChange) { goLogin(); return; }
+                        account = accountFrom(snap.data(), user);
+                        cacheAccount(user.uid, account);
+                    }
+                    activeSchoolConfig = await loadSchoolConfig();
+                    activeSchool = (window.SCHOOL_LIST || [])[0] || { id: 'main' };
+                    activeAccount = account;
+                    document.querySelectorAll('.admin-only').forEach((el) => el.classList.toggle('hidden', account.role !== 'admin'));
+                    document.querySelectorAll('[data-to-prev]').forEach((el) => { el.textContent = account.role === 'admin' ? '先生・生徒・管理の選択に戻る' : 'アプリの選択に戻る'; });
+                    if (account.role === 'admin') showRoleChooser();
+                    else if (account.role === 'teacher') await enterTeacher();
+                    else await enterStudent();
+                } catch (e) {
+                    goLogin();
+                    return;
+                }
+                hideLoading();
+            });
+        }
+        boot();
+        populateSourceQuestionList();
+        updateReleaseFields();
+        window.setInterval(() => {
+            if (viewMode === 'student' && !$('profile').classList.contains('hidden')) {
+                populateStudentQuestionSets();
+            }
+        }, 30_000);
+    </script>
+</body>
