@@ -942,6 +942,16 @@ h1::after { content: ""; display: block; width: 70px; height: 4px; margin: 8px a
 .loading-overlay-hint { background: none; border: 0; box-shadow: none; padding: 12px 0 0; max-width: none; }
 .toggle-pw-btn, .toggle-pw-btn:hover, .toggle-pw-btn:active { transform: translateY(-50%); }
 
-/* スマホ：安全領域と入力欄の拡大防止 */
-body { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); padding-bottom: env(safe-area-inset-bottom); }
-@media (max-width: 600px) { input, select, textarea { font-size: 16px; } }
+/* スマホ：画面の左右に隙間をあける（ノッチ部分は避ける）／入力欄の拡大防止 */
+body {
+    padding-left: max(15px, env(safe-area-inset-left));
+    padding-right: max(15px, env(safe-area-inset-right));
+    padding-bottom: max(15px, env(safe-area-inset-bottom));
+}
+@media (max-width: 480px) {
+    body { padding-left: max(14px, env(safe-area-inset-left)); padding-right: max(14px, env(safe-area-inset-right)); padding-top: 14px; }
+    input, select, textarea { font-size: 16px; }
+}
+@media (max-width: 360px) {
+    body { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
+}

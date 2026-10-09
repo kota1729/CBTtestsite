@@ -667,3 +667,6 @@ img, video { max-width: 100%; height: auto; }
     .number-picker-options, .number-picker-options[class] { grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 8px; }
     .number-picker-toggle { width: 100%; text-align: left; }
 }
+
+/* タイトル枠と問題枠の端をそろえる（どの画面幅でも傾けない） */
+.hero, .card, .card:nth-of-type(even) { transform: none; }
