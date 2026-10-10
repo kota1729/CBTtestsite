@@ -94,3 +94,20 @@ function disableAutocomplete() {
     new MutationObserver((records) => records.forEach((r) => r.addedNodes.forEach((n) => { if (n.nodeType === 1) { if (/^(INPUT|SELECT|TEXTAREA)$/.test(n.tagName)) n.setAttribute('autocomplete', 'off'); off(n); } })))
         .observe(document.body, { childList: true, subtree: true });
 }
+
+// 数字だけの入力欄：入力した瞬間に、半角数字に直し、min〜max の範囲に収める（max は関数で渡す＝あとから変わってもよい）
+function limitNumberInput(input, getMax, min = 1) {
+    const fix = () => {
+        let v = input.value.replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/\D/g, '');
+        if (v !== '') {
+            const max = getMax();
+            if (max < min) v = '';
+            else v = String(Math.min(max, Math.max(min, Number(v))));
+        }
+        if (input.value !== v) input.value = v;
+    };
+    input.addEventListener('input', (e) => { if (!e.isComposing) fix(); });
+    input.addEventListener('compositionend', fix);
+    input.addEventListener('blur', fix);
+    return fix;
+}

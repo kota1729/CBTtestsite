@@ -65,7 +65,7 @@
                                 <option value="fill">回答を直接入力する</option>
                                 <option value="individual">1問ずつ出題（各問4択）</option>
                             </select></div>
-                        <div id="pageSizeField"><label for="newPageSize">1画面あたりの問題数（1〜30）</label><input id="newPageSize" type="number" inputmode="numeric" value="10" autocomplete="off"><p class="muted" style="margin:4px 0 0;font-size:12px">問題が多いとき、この数ごとに画面を分けます。「複数問題で選択肢をまとめる」では、選択肢もその画面の問題の分だけになります。</p></div>
+                        <div id="pageSizeField"><label for="newPageSize">1画面あたりの問題数（1〜30）</label><input id="newPageSize" type="text" inputmode="numeric" value="10" autocomplete="off"></div>
                         <div><label for="releaseMode">生徒への出題時刻</label><select autocomplete="off" id="releaseMode">
                                 <option value="now">今すぐ公開</option>
                                 <option value="delay">何分後に公開</option>
@@ -84,7 +84,7 @@
                     <p class="muted" id="selectedQuestionCount">0問選択中</p>
                     <div class="actions" style="align-items:end; margin:8px 0">
                         <label for="randomQuestionCount">ランダムに選ぶ問題数</label>
-                        <input id="randomQuestionCount" type="number" min="1" value="5" style="max-width:100px" autocomplete="off">
+                        <input id="randomQuestionCount" type="text" inputmode="numeric" value="5" style="max-width:100px" autocomplete="off"><span class="muted" id="randomMaxHint" style="font-size:12px"></span>
                         <button id="randomSelectQuestions" type="button" class="secondary">条件に合う問題からランダム選択</button>
                         <button id="selectAllQuestions" type="button" class="secondary">すべての問題を選択</button>
                         <button id="clearAllQuestions" type="button" class="secondary">選択をすべて外す</button>
@@ -796,8 +796,18 @@
                 });
         }
 
+        // 数字欄：1画面あたりの問題数は1〜30、ランダムに選ぶ問題数は「いまの条件に合う問題数」まで
+        limitNumberInput($('newPageSize'), () => 30);
+        const fixRandomCount = limitNumberInput($('randomQuestionCount'), () => getMatchingSourceQuestions().length);
+        function syncRandomMax() {
+            const n = getMatchingSourceQuestions().length;
+            $('randomMaxHint').textContent = n ? `（最大${n}問）` : '（条件に合う問題がありません）';
+            fixRandomCount();
+        }
+
         function populateSourceQuestionList() {
             const matches = getMatchingSourceQuestions();
+            syncRandomMax();
             $('sourceQuestionList').innerHTML = matches.map(({ question, index }, matchIndex) => `
                 <label class="source-question">
                     <input type="checkbox" value="${index}" ${selectedSourceQuestionIndexes.has(index) ? 'checked' : ''} autocomplete="off">

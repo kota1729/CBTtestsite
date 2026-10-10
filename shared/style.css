@@ -670,3 +670,6 @@ img, video { max-width: 100%; height: auto; }
 
 /* タイトル枠と問題枠の端をそろえる（どの画面幅でも傾けない） */
 .hero, .card, .card:nth-of-type(even) { transform: none; }
+
+/* 入力欄とプルダウンの高さをそろえる */
+input:not([type=checkbox]):not([type=radio]):not([type=file]), select { height: 44px; box-sizing: border-box; }
