@@ -96,18 +96,23 @@ function disableAutocomplete() {
 }
 
 // 数字だけの入力欄：入力した瞬間に、半角数字に直し、min〜max の範囲に収める（max は関数で渡す＝あとから変わってもよい）
+// 入力欄から外れたとき、空や範囲外なら、最初の値（なければ下限）→上限・下限の順に自動で直す
 function limitNumberInput(input, getMax, min = 1) {
+    const clean = () => input.value.replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/\D/g, '');
+    const clamp = (n) => Math.min(getMax(), Math.max(min, n));
     const fix = () => {
-        let v = input.value.replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/\D/g, '');
-        if (v !== '') {
-            const max = getMax();
-            if (max < min) v = '';
-            else v = String(Math.min(max, Math.max(min, Number(v))));
-        }
+        let v = clean();
+        if (v !== '') v = getMax() < min ? '' : String(clamp(Number(v)));
         if (input.value !== v) input.value = v;
+    };
+    const fixOnBlur = () => {
+        const v = clean();
+        if (getMax() < min) { input.value = ''; return; }
+        const fallback = Number(input.defaultValue) || min;
+        input.value = String(clamp(v === '' ? fallback : Number(v)));
     };
     input.addEventListener('input', (e) => { if (!e.isComposing) fix(); });
     input.addEventListener('compositionend', fix);
-    input.addEventListener('blur', fix);
+    input.addEventListener('blur', fixOnBlur);
     return fix;
 }
